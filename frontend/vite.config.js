@@ -7,7 +7,7 @@ export default defineConfig({
   },
   build: {
     sourcemap: true, // Enable JS source maps in build
-    outDir: '../dist' // Match standard output
+    // outDir: '../dist' // Match standard output
   },
   server: {
     host: true // Expose to network (good for mobile testing)
