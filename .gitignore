@@ -1,0 +1,12 @@
+# Node
+node_modules/
+
+# Env
+.env
+
+# Build
+dist/
+
+# Database
+*.sqlite
+*.sqlite3

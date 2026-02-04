@@ -1,0 +1,193 @@
+@use 'variables';
+
+/* Task List */
+.task-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-height: 50vh;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+/* Scrollbar Styling */
+.task-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.task-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.task-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+
+.task-item {
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 0.75rem 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    transition: all 0.3s ease; /* Animate all properties including height/margin */
+    user-select: none;
+    max-height: 100px; /* Arbitrary max-height for transition */
+    overflow: hidden;
+
+    &:hover {
+        background: rgba(30, 41, 59, 0.8);
+        transform: translateX(4px);
+    }
+
+    &.dragging {
+        opacity: 0.5;
+        background: rgba(255, 255, 255, 0.05);
+        border: 2px dashed rgba(255, 255, 255, 0.2);
+        box-shadow: none;
+        
+        /* Hide content to make it look like a placeholder "slot" */
+        & > * {
+            visibility: hidden;
+        }
+    }
+
+    &.removing {
+        opacity: 0;
+        transform: scale(0.9);
+        max-height: 0;
+        margin-top: 0;
+        margin-bottom: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+        border-width: 0;
+    }
+}
+
+.task-text {
+    flex: 1;
+    font-size: 1rem;
+    // word-break: break-all;
+}
+
+.delete-btn {
+    visibility: hidden;
+    background: none;
+    border: none;
+    color: #ef4444; /* Red */
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    opacity: 0;
+    pointer-events: none; /* Prevent clicks when hidden */
+    transition: all 0.3s ease-in-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.task-item:hover .delete-btn,
+.task-item.active .delete-btn {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.delete-btn:hover {
+    background: rgba(239, 68, 68, 0.1);
+}
+
+/* Drag Over Effect */
+.task-list.drag-over {
+    /* Optional visual cue for list container */
+}
+
+/* Completed Task Styling */
+.task-item.completed {
+    background: rgba(30, 41, 59, 0.4);
+    border-color: rgba(255, 255, 255, 0.05);
+}
+
+.task-item.completed .task-text {
+    text-decoration: line-through;
+    color: #64748b;
+}
+
+/* Drag Handle */
+.drag-handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: grab;
+    color: var(--text-color);
+    opacity: 0.7;
+    padding: 8px;
+    transition: opacity 0.2s;
+
+    &:hover {
+        opacity: 1;
+        color: var(--primary-color);
+        transform: scale(1.1);
+    }
+}
+
+/* Custom Checkbox */
+.checkbox-container {
+    display: inline-block;
+    vertical-align: middle;
+    cursor: pointer;
+    position: relative;
+    width: 20px;
+    height: 20px;
+    margin-right: 0.5rem;
+}
+
+.checkbox-container input {
+    display: none;
+}
+
+.checkmark {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 20px;
+    width: 20px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--glass-border);
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.checkbox-container:hover .checkmark {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.checkbox-container input:checked ~ .checkmark {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.checkmark:after {
+    content: "";
+    position: absolute;
+    display: none;
+}
+
+.checkbox-container input:checked ~ .checkmark:after {
+    display: block;
+}
+
+.checkbox-container .checkmark:after {
+    left: 6px;
+    top: 1px;
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    -webkit-transform: rotate(45deg);
+    -ms-transform: rotate(45deg);
+    transform: rotate(45deg);
+}
