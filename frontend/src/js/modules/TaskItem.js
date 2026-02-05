@@ -65,6 +65,20 @@ export class TaskItem {
         span.classList.add('task-text');
         span.textContent = taskObj.text;
 
+        // Timestamp
+        const timestamp = document.createElement('span');
+        timestamp.classList.add('task-timestamp');
+        if (taskObj.createdAt) {
+            const date = new Date(taskObj.createdAt);
+            timestamp.textContent = date.toLocaleString('ru-RU', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
         // Delete Button
         // Toggle active state for delete button visibility on mobile
         li.addEventListener('click', (e) => {
@@ -95,10 +109,16 @@ export class TaskItem {
             }, 300);
         });
 
-        li.appendChild(dragHandle);
-        li.appendChild(checkboxLabel);
-        li.appendChild(span);
-        li.appendChild(deleteBtn);
+        // Task Content Wrapper (main row)
+        const taskContent = document.createElement('div');
+        taskContent.classList.add('task-content');
+        taskContent.appendChild(dragHandle);
+        taskContent.appendChild(checkboxLabel);
+        taskContent.appendChild(span);
+        taskContent.appendChild(deleteBtn);
+
+        li.appendChild(taskContent);
+        li.appendChild(timestamp);
 
         return li;
     }

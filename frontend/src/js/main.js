@@ -39,7 +39,8 @@ class App {
 
         const newTask = {
             text: taskText,
-            completed: false
+            completed: false,
+            createdAt: new Date().toISOString()
         };
 
         await Store.addTask(newTask);
