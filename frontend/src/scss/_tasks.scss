@@ -35,7 +35,6 @@
     gap: 0.25rem;
     transition: all 0.3s ease; /* Animate all properties including height/margin */
     user-select: none;
-    max-height: 150px; /* Increased for two rows */
 
     &:hover {
         background: rgba(30, 41, 59, 0.8);
