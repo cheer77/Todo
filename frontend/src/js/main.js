@@ -77,7 +77,7 @@ class App {
                 (id) => this.deleteTask(id), 
                 (id, completed) => this.toggleTask(id, completed)
             );
-            this.taskList.appendChild(taskElement);
+            this.taskList.prepend(taskElement);
         });
     }
 }

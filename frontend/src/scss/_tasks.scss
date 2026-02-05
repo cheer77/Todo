@@ -36,7 +36,6 @@
     transition: all 0.3s ease; /* Animate all properties including height/margin */
     user-select: none;
     max-height: 100px; /* Arbitrary max-height for transition */
-    overflow: hidden;
 
     &:hover {
         background: rgba(30, 41, 59, 0.8);
