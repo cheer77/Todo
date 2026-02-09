@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   root: '.', // Default is current dir, but good to be explicit
+  publicDir: 'public', // Vite will copy this folder to dist
   css: {
     devSourcemap: true // Enable SCSS source maps in dev
   },
