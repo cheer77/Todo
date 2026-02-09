@@ -1,0 +1,95 @@
+.tooltip {
+    position: fixed;
+    z-index: 9999;
+    padding: 0.625rem 1rem;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: var(--text-color);
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    box-shadow: var(--glass-shadow);
+    pointer-events: none;
+    white-space: nowrap;
+    max-width: 300px;
+    
+    // Initial state (hidden)
+    opacity: 0;
+    transform: translateY(0);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+
+    // Visible state
+    &--visible {
+        opacity: 1;
+    }
+
+    // Position-specific animations
+    &--top {
+        &.tooltip--visible {
+            transform: translateY(-8px);
+        }
+    }
+
+    &--bottom {
+        &.tooltip--visible {
+            transform: translateY(8px);
+        }
+    }
+
+    &--left {
+        &.tooltip--visible {
+            transform: translateX(-8px);
+        }
+    }
+
+    &--right {
+        &.tooltip--visible {
+            transform: translateX(8px);
+        }
+    }
+
+    // Arrow indicator (optional enhancement)
+    &::before {
+        content: '';
+        position: absolute;
+        width: 0;
+        height: 0;
+        border: 6px solid transparent;
+    }
+
+    &--top::before {
+        bottom: -12px;
+        left: 50%;
+        transform: translateX(-50%);
+        border-top-color: var(--secondary-color);
+    }
+
+    &--bottom::before {
+        top: -12px;
+        left: 50%;
+        transform: translateX(-50%);
+        border-bottom-color: var(--primary-color);
+    }
+
+    &--left::before {
+        right: -12px;
+        top: 50%;
+        transform: translateY(-50%);
+        border-left-color: var(--secondary-color);
+    }
+
+    &--right::before {
+        left: -12px;
+        top: 50%;
+        transform: translateY(-50%);
+        border-right-color: var(--primary-color);
+    }
+}
+
+// Mobile responsiveness
+@media (max-width: 768px) {
+    .tooltip {
+        max-width: calc(100vw - 32px);
+        font-size: 0.8125rem;
+        padding: 0.5rem 0.875rem;
+    }
+}

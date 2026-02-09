@@ -2,6 +2,7 @@ import '../scss/style.scss';
 import { Store } from './modules/Store.js';
 import { TaskItem } from './modules/TaskItem.js';
 import { DragDrop } from './modules/DragDrop.js';
+import { Tooltip } from './modules/Tooltip.js';
 
 class App {
     constructor() {
@@ -35,7 +36,18 @@ class App {
 
     async addTask() {
         const taskText = this.taskInput.value.trim();
-        if (taskText === '') return;
+        
+        if (taskText === '') {
+            // Show tooltip when input is empty
+            Tooltip.show({
+                target: this.taskInput,
+                message: 'Please enter a task!',
+                position: 'top',
+                duration: 500000000
+            });
+            this.taskInput.focus();
+            return;
+        }
 
         const newTask = {
             text: taskText,
