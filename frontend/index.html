@@ -1,54 +1,72 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <!-- PWA Manifest -->
-    <link rel="manifest" href="/manifest.json">
-    
-    <!-- iOS Meta Tags -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="To-Do">
-    <link rel="apple-touch-icon" href="/icons/icon-180x180.png">
-    
-    <!-- Theme Color -->
-    <meta name="theme-color" content="#6366f1">
-    
-    <title>Premium To-Do List</title>
-    <!-- CSS imported via JS in Vite -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
-</head>
-<body>
-    <div class="background-globes">
-        <div class="globe globe-1"></div>
-        <div class="globe globe-2"></div>
-        <div class="globe globe-3"></div>
-    </div>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <div class="container">
-        <header>
-            <h1>My Tasks</h1>
-            <p class="subtitle">Focus on what matters.</p>
-        </header>
+		<!-- PWA Manifest -->
+		<link rel="manifest" href="/manifest.json" />
 
-        <div class="input-group">
-            <input type="text" id="task-input" placeholder="What needs to be done?" autocomplete="off">
-            <button id="add-btn">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-            </button>
-        </div>
+		<!-- iOS Meta Tags -->
+		<meta name="mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+		<meta name="apple-mobile-web-app-title" content="To-Do" />
+		<link rel="apple-touch-icon" href="/icons/icon-180x180.png" />
+		<link rel="icon" href="/icons/icon-256x256.png" />
 
-        <ul id="task-list" class="task-list">
-            <!-- Tasks will be added here -->
-        </ul>
-    </div>
+		<!-- Theme Color -->
+		<meta name="theme-color" content="#6366f1" />
 
-    <script type="module" src="/src/js/main.js"></script>
-</body>
+		<title>Premium To-Do List</title>
+		<!-- CSS imported via JS in Vite -->
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap"
+			rel="stylesheet" />
+	</head>
+	<body>
+		<div class="background-globes">
+			<div class="globe globe-1"></div>
+			<div class="globe globe-2"></div>
+			<div class="globe globe-3"></div>
+		</div>
+
+		<div class="container">
+			<header>
+				<h1>My Tasks</h1>
+				<p class="subtitle">Focus on what matters.</p>
+			</header>
+
+			<div class="input-group">
+				<input
+					type="text"
+					id="task-input"
+					placeholder="What needs to be done?"
+					autocomplete="off" />
+				<button id="add-btn">
+					<svg
+						width="24"
+						height="24"
+						viewBox="0 0 24 24"
+						fill="none"
+						xmlns="http://www.w3.org/2000/svg">
+						<path
+							d="M12 5V19M5 12H19"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round" />
+					</svg>
+				</button>
+			</div>
+
+			<ul id="task-list" class="task-list">
+				<!-- Tasks will be added here -->
+			</ul>
+		</div>
+
+		<script type="module" src="/src/js/main.js"></script>
+	</body>
 </html>
