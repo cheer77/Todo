@@ -33,17 +33,20 @@ app.get('/api/tasks', async (req, res) => {
 // POST new task
 app.post('/api/tasks', async (req, res) => {
   try {
-    // Determine order: find max order and add 1
-    const maxOrderTask = await Task.findOne({
-      order: [['order', 'DESC']]
-    });
-    const nextOrder = maxOrderTask ? maxOrderTask.order + 1 : 0;
-
+    // New tasks get order -1 to appear at top
     const task = await Task.create({
       text: req.body.text,
       completed: req.body.completed,
-      order: nextOrder
+      order: -1
     });
+    
+    // Reorder all tasks to have sequential order starting from 0
+    const allTasks = await Task.findAll({ order: [['order', 'ASC']] });
+    const updates = allTasks.map((t, index) => 
+      Task.update({ order: index }, { where: { id: t.id } })
+    );
+    await Promise.all(updates);
+    
     res.status(201).json(task);
   } catch (error) {
     res.status(400).json({ message: error.message });
