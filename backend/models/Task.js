@@ -1,11 +1,22 @@
 const { Sequelize, DataTypes } = require('sequelize');
 
-// Initialize Sequelize with SQLite
-const sequelize = new Sequelize({
-  dialect: 'sqlite',
-  storage: './database.sqlite', // File will be created in backend/ directory
-  logging: false // Disable SQL query logging for cleaner console
-});
+// Initialize Sequelize with PostgreSQL for production, SQLite for local dev
+const sequelize = process.env.DATABASE_URL 
+  ? new Sequelize(process.env.DATABASE_URL, {
+      dialect: 'postgres',
+      dialectOptions: {
+        ssl: process.env.NODE_ENV === 'production' ? {
+          require: true,
+          rejectUnauthorized: false
+        } : false
+      },
+      logging: false
+    })
+  : new Sequelize({
+      dialect: 'sqlite',
+      storage: './database.sqlite',
+      logging: false
+    });
 
 const Task = sequelize.define('Task', {
   text: {
