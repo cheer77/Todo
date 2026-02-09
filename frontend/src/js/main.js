@@ -43,7 +43,7 @@ class App {
                 target: this.taskInput,
                 message: 'Please enter a task!',
                 position: 'top',
-                duration: 500000000
+                duration: 3000
             });
             this.taskInput.focus();
             return;
