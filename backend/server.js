@@ -12,8 +12,11 @@ app.use(express.json());
 
 // Database Connection & Sync
 sequelize.sync()
-  .then(() => console.log('SQLite database synced'))
-  .catch(err => console.error('SQLite sync error:', err));
+  .then(() => {
+    console.log(`Database synced (${sequelize.getDialect()})`);
+    console.log(`Using: ${process.env.DATABASE_URL ? 'PostgreSQL' : 'SQLite'}`);
+  })
+  .catch(err => console.error('Database sync error:', err));
 
 // Routes
 
