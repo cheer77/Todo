@@ -20,7 +20,7 @@ const sequelize = process.env.DATABASE_URL
 
 const Task = sequelize.define('Task', {
   text: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
     allowNull: false
   },
   completed: {
