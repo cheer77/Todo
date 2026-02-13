@@ -18,10 +18,17 @@ const corsOptions = {
       process.env.FRONTEND_URL
     ].filter(Boolean); // Remove undefined values
     
+    console.log(`CORS check - Origin: ${origin}`);
+    console.log(`CORS check - Allowed origins:`, allowedOrigins);
+    
     if (allowedOrigins.indexOf(origin) !== -1) {
+      console.log(`✅ CORS allowed for: ${origin}`);
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      console.log(`❌ CORS rejected for: ${origin}`);
+      console.log(`⚠️  Add this origin to FRONTEND_URL env var: ${origin}`);
+      // Don't throw error, just reject with false
+      callback(null, false);
     }
   },
   credentials: true
