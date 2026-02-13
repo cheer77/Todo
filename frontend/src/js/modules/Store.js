@@ -19,10 +19,23 @@ export class Store {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(task)
             });
-            if (!response.ok) throw new Error('Failed to add task');
+            
+            if (!response.ok) {
+                // Log detailed error information
+                const errorData = await response.json().catch(() => ({}));
+                console.error('Server error details:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    errorData: errorData,
+                    taskLength: task.text?.length || 0
+                });
+                throw new Error(errorData.message || 'Failed to add task');
+            }
+            
             return await response.json(); // Returns the created task with ID
         } catch (e) {
             console.error('Failed to add task', e);
+            throw e; // Re-throw to let caller handle it
         }
     }
 
