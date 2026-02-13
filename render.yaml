@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: todo-backend
+    env: node
+    region: frankfurt
+    plan: free
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: FRONTEND_URL
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: todo-db
+          property: connectionString
+
+databases:
+  - name: todo-db
+    databaseName: todo
+    user: todo
+    plan: free
+    region: frankfurt

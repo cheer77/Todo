@@ -7,7 +7,27 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
-app.use(cors());
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = [
+      'http://localhost:5173',
+      'http://localhost:3000',
+      process.env.FRONTEND_URL
+    ].filter(Boolean); // Remove undefined values
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Database Connection & Sync
@@ -53,6 +73,28 @@ app.post('/api/tasks', async (req, res) => {
   }
 });
 
+// PUT reorder tasks (Batch update) - MUST be before /:id routes
+app.put('/api/tasks/reorder/batch', async (req, res) => {
+  try {
+    const { tasks } = req.body; // Expects array of { id, order }
+    if (!Array.isArray(tasks)) {
+      return res.status(400).json({ message: 'Invalid data format' });
+    }
+
+    const updates = tasks.map(taskItem => 
+      Task.update(
+        { order: taskItem.order },
+        { where: { id: taskItem.id } }
+      )
+    );
+
+    await Promise.all(updates);
+    res.json({ message: 'Tasks reordered' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // PUT update task (toggle or text)
 app.put('/api/tasks/:id', async (req, res) => {
   try {
@@ -79,26 +121,13 @@ app.delete('/api/tasks/:id', async (req, res) => {
   }
 });
 
-// PUT reorder tasks (Batch update)
-app.put('/api/tasks/reorder/batch', async (req, res) => {
-  try {
-    const { tasks } = req.body; // Expects array of { id, order }
-    if (!Array.isArray(tasks)) {
-      return res.status(400).json({ message: 'Invalid data format' });
-    }
-
-    const updates = tasks.map(taskItem => 
-      Task.update(
-        { order: taskItem.order },
-        { where: { id: taskItem.id } }
-      )
-    );
-
-    await Promise.all(updates);
-    res.json({ message: 'Tasks reordered' });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    database: sequelize.getDialect(),
+    timestamp: new Date().toISOString()
+  });
 });
 
 app.listen(PORT, () => {

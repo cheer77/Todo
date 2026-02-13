@@ -1,4 +1,4 @@
-const CACHE_NAME = 'todo-pwa-v1';
+const CACHE_NAME = 'todo-pwa-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -31,14 +31,23 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch event - serve from cache, fallback to network
+// Fetch event - Network First for API, Cache First for static assets
 self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+  
+  // NEVER cache API requests - always go to network
+  if (url.pathname.startsWith('/api/')) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+  
+  // For static assets: Cache First, fallback to Network
   event.respondWith(
     caches.match(event.request).then((response) => {
       return response || fetch(event.request).then((fetchResponse) => {
         return caches.open(CACHE_NAME).then((cache) => {
-          // Cache successful responses
-          if (event.request.method === 'GET') {
+          // Only cache GET requests for static assets
+          if (event.request.method === 'GET' && !url.pathname.startsWith('/api/')) {
             cache.put(event.request, fetchResponse.clone());
           }
           return fetchResponse;
