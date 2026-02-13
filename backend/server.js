@@ -35,7 +35,7 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.use(express.json());
+app.use(express.json({ limit: '5mb' })); // Increase limit for longer task text
 
 // Database Connection & Sync
 sequelize.sync()
@@ -60,6 +60,13 @@ app.get('/api/tasks', async (req, res) => {
 // POST new task
 app.post('/api/tasks', async (req, res) => {
   try {
+    console.log('Received task data:', req.body);
+    
+    // Validate required fields
+    if (!req.body.text || req.body.text.trim() === '') {
+      return res.status(400).json({ message: 'Task text is required' });
+    }
+    
     // New tasks get order -1 to appear at top
     const task = await Task.create({
       text: req.body.text,
@@ -76,7 +83,11 @@ app.post('/api/tasks', async (req, res) => {
     
     res.status(201).json(task);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    console.error('Error creating task:', error);
+    res.status(400).json({ 
+      message: error.message,
+      details: error.errors ? error.errors.map(e => e.message) : undefined
+    });
   }
 });
 
