@@ -1,5 +1,12 @@
 @use 'variables';
 
+.header-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+}
+
 /* Task List */
 .task-list {
     list-style: none;

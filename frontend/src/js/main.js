@@ -3,20 +3,30 @@ import { Store } from './modules/Store.js';
 import { TaskItem } from './modules/TaskItem.js';
 import { DragDrop } from './modules/DragDrop.js';
 import { Tooltip } from './modules/Tooltip.js';
+import { Skeleton } from './modules/Skeleton.js';
 
 class App {
     constructor() {
         this.taskInput = document.getElementById('task-input');
         this.addBtn = document.getElementById('add-btn');
         this.taskList = document.getElementById('task-list');
+        this.miniLoader = document.getElementById('mini-loader');
 
         this.init();
     }
 
     async init() {
-        await this.renderTasks();
+        await this.renderTasks(true); // true for initial load
         this.setupEventListeners();
         this.setupDragDrop();
+    }
+
+    showMiniLoader() {
+        if (this.miniLoader) this.miniLoader.classList.add('active');
+    }
+
+    hideMiniLoader() {
+        if (this.miniLoader) this.miniLoader.classList.remove('active');
     }
 
     setupEventListeners() {
@@ -55,19 +65,25 @@ class App {
             createdAt: new Date().toISOString()
         };
 
+        this.showMiniLoader();
         await Store.addTask(newTask);
-        this.renderTasks(); 
+        await this.renderTasks(false); // No skeletons for add
+        this.hideMiniLoader();
         this.taskInput.value = '';
         this.taskInput.focus();
     }
 
     async deleteTask(id) {
+        this.showMiniLoader();
         await Store.deleteTask(id);
-        this.renderTasks(); 
+        await this.renderTasks(false); 
+        this.hideMiniLoader();
     }
 
     async toggleTask(id, completed) {
+        this.showMiniLoader();
         await Store.toggleTask(id, completed);
+        this.hideMiniLoader();
     }
 
     async handleReorder() {
@@ -77,13 +93,31 @@ class App {
             const id = item.dataset.id;
             tasksWithOrder.push({ id, order: index });
         });
+        this.showMiniLoader();
         await Store.updateOrder(tasksWithOrder);
+        this.hideMiniLoader();
     }
 
-    async renderTasks() {
-        this.taskList.innerHTML = '';
+    async renderTasks(initialLoad = false) {
+        if (initialLoad) {
+            Skeleton.render(this.taskList, 5);
+        }
+
         const tasks = await Store.getTasks();
         
+        // If initial load, we want to clear skeletons.
+        // Actually, we always clear innerHTML below, so it's handled.
+        
+        this.taskList.innerHTML = '';
+        
+        if (tasks.length === 0) {
+            const noTasksMsg = document.createElement('div');
+            noTasksMsg.className = 'no-tasks-message';
+            noTasksMsg.textContent = 'No tasks yet';
+            this.taskList.appendChild(noTasksMsg);
+            return;
+        }
+
         tasks.forEach((task) => {
             const taskElement = TaskItem.create(
                 task, 
