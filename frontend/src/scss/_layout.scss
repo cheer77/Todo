@@ -1,5 +1,11 @@
 @use 'variables';
 
+.app {
+    height: 100vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
 /* Container - Liquid Glass */
 .container {
     background: linear-gradient(
