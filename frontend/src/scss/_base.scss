@@ -9,8 +9,8 @@
 
 html {
     height: 100%;
-    overflow: hidden;
-    overscroll-behavior: none;
+    // overflow: hidden;
+    // overscroll-behavior: none;
 }
 
 body {
@@ -19,7 +19,7 @@ body {
     min-height: 100dvh;
     display: flex;
     justify-content: center;
-    overflow: hidden;
+    // overflow: hidden;
     touch-action: manipulation;
     position: relative;
 }
