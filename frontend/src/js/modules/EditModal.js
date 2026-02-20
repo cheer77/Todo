@@ -1,3 +1,5 @@
+import { Tooltip } from './Tooltip.js';
+
 export class EditModal {
     static activeModal = null;
 
@@ -23,7 +25,7 @@ export class EditModal {
 
         modal.innerHTML = `
             <div class="edit-modal-header">
-                <h2 class="edit-modal-title">Редактирование</h2>
+                <h2 class="edit-modal-title">Edit Task</h2>
                 <button class="edit-modal-close" aria-label="Close">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M18 6L6 18M6 6l12 12"/>
@@ -32,8 +34,8 @@ export class EditModal {
             </div>
             <textarea class="edit-modal-textarea" rows="4">${EditModal.escapeHtml(currentText)}</textarea>
             <div class="edit-modal-actions">
-                <button class="edit-modal-btn cancel">Отмена</button>
-                <button class="edit-modal-btn save">Сохранить</button>
+                <button class="edit-modal-btn cancel">Cancel</button>
+                <button class="edit-modal-btn save">Save</button>
             </div>
         `;
 
@@ -56,7 +58,20 @@ export class EditModal {
 
         const save = () => {
             const newText = textarea.value.trim();
-            if (newText && newText !== currentText) {
+            if (!newText) {
+                // Show tooltip above textarea
+                Tooltip.show({
+                    target: textarea,
+                    message: 'Task cannot be empty!',
+                    position: 'top',
+                    duration: 3000
+                });
+                textarea.classList.add('error');
+                textarea.focus();
+                setTimeout(() => textarea.classList.remove('error'), 600);
+                return;
+            }
+            if (newText !== currentText) {
                 onSave(taskId, newText);
             }
             EditModal.hide();

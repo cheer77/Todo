@@ -121,7 +121,9 @@ export class TaskItem {
 
         editBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            onEdit(taskObj.id, taskObj.text, li);
+            // Read current text from DOM, not from closure
+            const currentText = span.textContent;
+            onEdit(taskObj.id, currentText, li);
         });
 
         // Task Content Wrapper (main row)
