@@ -83,7 +83,7 @@ export class TaskItem {
         // Toggle active state for delete button visibility on mobile
         li.addEventListener('click', (e) => {
             // If clicking inside checkbox (label/input/span) or delete btn, don't toggle active state
-            if (e.target.closest('.checkbox-container') || e.target.closest('.delete-btn')) return;
+            if (e.target.closest('.checkbox-container') || e.target.closest('.delete-btn') || e.target.closest('.edit-btn')) return;
             
             // Remove active from all others
             document.querySelectorAll('.task-item.active').forEach(item => { // ...
