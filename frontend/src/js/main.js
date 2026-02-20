@@ -4,6 +4,7 @@ import { TaskItem } from './modules/TaskItem.js';
 import { DragDrop } from './modules/DragDrop.js';
 import { Tooltip } from './modules/Tooltip.js';
 import { Skeleton } from './modules/Skeleton.js';
+import { EditModal } from './modules/EditModal.js';
 
 class App {
     constructor() {
@@ -86,6 +87,29 @@ class App {
         this.hideMiniLoader();
     }
 
+    editTask(id, currentText, sourceElement) {
+        EditModal.show({
+            taskId: id,
+            currentText,
+            sourceElement,
+            onSave: async (taskId, newText) => {
+                this.showMiniLoader();
+                try {
+                    await Store.updateTask(taskId, newText);
+                    // Update text in DOM without re-rendering
+                    const taskItem = this.taskList.querySelector(`[data-id="${taskId}"]`);
+                    if (taskItem) {
+                        const textSpan = taskItem.querySelector('.task-text');
+                        if (textSpan) textSpan.textContent = newText;
+                    }
+                } catch (e) {
+                    console.error('Failed to edit task', e);
+                }
+                this.hideMiniLoader();
+            }
+        });
+    }
+
     async handleReorder() {
         // Scrape the DOM to get new order of IDs
         const tasksWithOrder = [];
@@ -122,7 +146,8 @@ class App {
             const taskElement = TaskItem.create(
                 task, 
                 (id) => this.deleteTask(id), 
-                (id, completed) => this.toggleTask(id, completed)
+                (id, completed) => this.toggleTask(id, completed),
+                (id, text, el) => this.editTask(id, text, el)
             );
             this.taskList.appendChild(taskElement);
         });

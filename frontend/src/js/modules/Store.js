@@ -50,6 +50,21 @@ export class Store {
         }
     }
 
+    static async updateTask(id, text) {
+        try {
+            const response = await fetch(`${API_URL}/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text })
+            });
+            if (!response.ok) throw new Error('Failed to update task');
+            return await response.json();
+        } catch (e) {
+            console.error('Failed to update task', e);
+            throw e;
+        }
+    }
+
     static async toggleTask(id, currentCompleted) {
         try {
             const response = await fetch(`${API_URL}/${id}`, {
