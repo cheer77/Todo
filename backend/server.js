@@ -1,9 +1,12 @@
 require('dotenv').config();
 const express = require('express');
+const http = require('http');
 const cors = require('cors');
+const { Server } = require('socket.io');
 const { sequelize, Task } = require('./models/Task');
 
 const app = express();
+const httpServer = http.createServer(app);
 const PORT = process.env.PORT || 3000;
 
 // Middleware
@@ -36,6 +39,16 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '5mb' })); // Increase limit for longer task text
+
+// Socket.IO
+const io = new Server(httpServer, { cors: corsOptions });
+
+io.on('connection', (socket) => {
+  console.log('🔌 Client connected:', socket.id);
+  socket.on('disconnect', () => {
+    console.log('🔌 Client disconnected:', socket.id);
+  });
+});
 
 // Database Connection & Sync
 sequelize.sync()
@@ -81,6 +94,7 @@ app.post('/api/tasks', async (req, res) => {
     );
     await Promise.all(updates);
     
+    io.emit('tasks:update');
     res.status(201).json(task);
   } catch (error) {
     console.error('Error creating task:', error);
@@ -107,6 +121,7 @@ app.put('/api/tasks/reorder/batch', async (req, res) => {
     );
 
     await Promise.all(updates);
+    io.emit('tasks:update');
     res.json({ message: 'Tasks reordered' });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -120,6 +135,7 @@ app.put('/api/tasks/:id', async (req, res) => {
     if (!task) return res.status(404).json({ message: 'Task not found' });
     
     await task.update(req.body);
+    io.emit('tasks:update');
     res.json(task);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -133,6 +149,7 @@ app.delete('/api/tasks/:id', async (req, res) => {
     if (!task) return res.status(404).json({ message: 'Task not found' });
     
     await task.destroy();
+    io.emit('tasks:update');
     res.json({ message: 'Task deleted' });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -148,6 +165,6 @@ app.get('/health', (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

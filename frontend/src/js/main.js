@@ -1,4 +1,5 @@
 import '../scss/style.scss';
+import { io } from 'socket.io-client';
 import { Store } from './modules/Store.js';
 import { TaskItem } from './modules/TaskItem.js';
 import { DragDrop } from './modules/DragDrop.js';
@@ -20,6 +21,21 @@ class App {
         await this.renderTasks(true); // true for initial load
         this.setupEventListeners();
         this.setupDragDrop();
+        this.setupSocket();
+    }
+
+    setupSocket() {
+        const socketUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+        this.socket = io(socketUrl);
+
+        this.socket.on('tasks:update', () => {
+            console.log('🔄 Real-time update received');
+            this.renderTasks(false);
+        });
+
+        this.socket.on('connect', () => {
+            console.log('🔌 Connected to server:', this.socket.id);
+        });
     }
 
     showMiniLoader() {
