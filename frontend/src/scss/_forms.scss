@@ -50,3 +50,33 @@ input[type="text"]::placeholder {
         transform: scale(0.95);
     }
 }
+
+/* Character Counter */
+.char-counter {
+    position: absolute;
+    right: 55px;
+    bottom: -20px;
+    text-align: right;
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-top: -0.75rem;
+    padding-right: 0.5rem;
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: opacity 0.25s ease, transform 0.25s ease, color 0.25s ease;
+    pointer-events: none;
+
+    &.visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    &.warning {
+        color: #f59e0b;
+    }
+
+    &.error {
+        color: #ef4444;
+        font-weight: 500;
+    }
+}

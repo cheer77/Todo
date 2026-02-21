@@ -61,9 +61,66 @@ export class TaskItem {
         checkboxLabel.appendChild(checkmark);
 
         // Task Text
+        const TEXT_TRUNCATE_LIMIT = 400;
+        const isLong = taskObj.text.length > TEXT_TRUNCATE_LIMIT;
+
+        const textWrapper = document.createElement('div');
+        textWrapper.classList.add('task-text-wrapper');
+        if (isLong) textWrapper.classList.add('truncated');
+
         const span = document.createElement('span');
         span.classList.add('task-text');
         span.textContent = taskObj.text;
+        textWrapper.appendChild(span);
+
+        // Expand/Collapse button for long texts
+        let expandBtn = null;
+        let expandBtnBottom = null;
+        if (isLong) {
+            const createExpandBtn = (className) => {
+                const btn = document.createElement('button');
+                btn.classList.add('expand-btn', className);
+                btn.innerHTML = `
+                    <span class="expand-btn-text">Show more</span>
+                    <svg class="expand-btn-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                `;
+                return btn;
+            };
+
+            expandBtn = createExpandBtn('expand-btn-top');
+            expandBtnBottom = createExpandBtn('expand-btn-bottom');
+
+            const toggleExpand = (e) => {
+                e.stopPropagation();
+                const isExpanded = textWrapper.classList.toggle('expanded');
+                textWrapper.classList.toggle('truncated', !isExpanded);
+
+                [expandBtn, expandBtnBottom].forEach(btn => {
+                    btn.querySelector('.expand-btn-text').textContent = isExpanded ? 'Show less' : 'Show more';
+                    btn.classList.toggle('expanded', isExpanded);
+                });
+
+                // Show/hide bottom button
+                expandBtnBottom.classList.toggle('visible', isExpanded);
+            };
+
+            expandBtn.addEventListener('click', toggleExpand);
+            expandBtnBottom.addEventListener('click', (e) => {
+                toggleExpand(e);
+                // Scroll the task-list container so this task is at the top
+                setTimeout(() => {
+                    const taskList = li.closest('.task-list');
+                    if (taskList) {
+                        taskList.scrollTo({
+                            top: li.offsetTop - taskList.offsetTop,
+                            behavior: 'smooth'
+                        });
+                    }
+                }, 50);
+            });
+        }
 
         // Timestamp
         const timestamp = document.createElement('span');
@@ -83,7 +140,7 @@ export class TaskItem {
         // Toggle active state for delete button visibility on mobile
         li.addEventListener('click', (e) => {
             // If clicking inside checkbox (label/input/span) or delete btn, don't toggle active state
-            if (e.target.closest('.checkbox-container') || e.target.closest('.delete-btn') || e.target.closest('.edit-btn')) return;
+            if (e.target.closest('.checkbox-container') || e.target.closest('.delete-btn') || e.target.closest('.edit-btn') || e.target.closest('.expand-btn')) return;
             
             // Remove active from all others
             document.querySelectorAll('.task-item.active').forEach(item => { // ...
@@ -131,11 +188,13 @@ export class TaskItem {
         taskContent.classList.add('task-content');
         taskContent.appendChild(dragHandle);
         taskContent.appendChild(checkboxLabel);
-        taskContent.appendChild(span);
+        taskContent.appendChild(textWrapper);
         taskContent.appendChild(editBtn);
         taskContent.appendChild(deleteBtn);
 
+        if (expandBtnBottom) li.appendChild(expandBtnBottom);
         li.appendChild(taskContent);
+        if (expandBtn) li.appendChild(expandBtn);
         li.appendChild(timestamp);
 
         return li;

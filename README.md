@@ -11,6 +11,8 @@ A modern, high-performance To-Do list application featuring a premium "glassmorp
 - **Toggle Completion** — checkbox to mark tasks as done, synced with the server.
 - **Drag & Drop Reorder** — desktop (HTML5 Drag & Drop via drag-handle) and mobile (Touch Events with a visual clone).
 - **Timestamps** — each task displays its creation date & time.
+- **Character Limit** — live counter appears on input focus, warns at 90% (yellow) and blocks at 1500 characters (red + tooltip).
+- **Expand / Collapse** — long tasks (>400 chars) are automatically truncated with a gradient fade; "Show more / Show less" buttons with smooth animation and auto-scroll.
 - **Real-Time Sync** — powered by Socket.IO. Changes made on one device appear instantly on all other connected devices (like Trello).
 
 ### UI / UX

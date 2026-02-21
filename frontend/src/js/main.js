@@ -7,12 +7,16 @@ import { Tooltip } from './modules/Tooltip.js';
 import { Skeleton } from './modules/Skeleton.js';
 import { EditModal } from './modules/EditModal.js';
 
+const MAX_CHARS = 1500;
+
 class App {
     constructor() {
         this.taskInput = document.getElementById('task-input');
         this.addBtn = document.getElementById('add-btn');
         this.taskList = document.getElementById('task-list');
         this.miniLoader = document.getElementById('mini-loader');
+        this.charCounter = document.getElementById('char-counter');
+        this.charCount = document.getElementById('char-count');
 
         this.init();
     }
@@ -20,6 +24,7 @@ class App {
     async init() {
         await this.renderTasks(true); // true for initial load
         this.setupEventListeners();
+        this.setupCharCounter();
         this.setupDragDrop();
         this.setupSocket();
     }
@@ -55,6 +60,48 @@ class App {
         });
     }
 
+    setupCharCounter() {
+        this.taskInput.addEventListener('focus', () => {
+            this.charCounter.classList.add('visible');
+            this.updateCharCount();
+        });
+
+        this.taskInput.addEventListener('blur', () => {
+            if (this.taskInput.value.length === 0) {
+                this.charCounter.classList.remove('visible');
+            }
+        });
+
+        this.taskInput.addEventListener('input', () => {
+            this.updateCharCount();
+        });
+    }
+
+    updateCharCount() {
+        const len = this.taskInput.value.length;
+        this.charCount.textContent = len;
+
+        this.charCounter.classList.remove('warning', 'error');
+        if (len > MAX_CHARS) {
+            this.charCounter.classList.add('error');
+            // Show tooltip warning once when exceeding limit
+            if (!this._limitWarningShown) {
+                this._limitWarningShown = true;
+                Tooltip.show({
+                    target: this.taskInput,
+                    message: `Character limit exceeded (${MAX_CHARS})! Shorten your text or submit as is.`,
+                    position: 'top',
+                    duration: 4000
+                });
+            }
+        } else {
+            this._limitWarningShown = false;
+            if (len >= MAX_CHARS * 0.9) {
+                this.charCounter.classList.add('warning');
+            }
+        }
+    }
+
     setupDragDrop() {
         new DragDrop(this.taskList, () => {
             this.handleReorder();
@@ -65,10 +112,20 @@ class App {
         const taskText = this.taskInput.value.trim();
         
         if (taskText === '') {
-            // Show tooltip when input is empty
             Tooltip.show({
                 target: this.taskInput,
                 message: 'Please enter a task!',
+                position: 'top',
+                duration: 3000
+            });
+            this.taskInput.focus();
+            return;
+        }
+
+        if (taskText.length > MAX_CHARS) {
+            Tooltip.show({
+                target: this.taskInput,
+                message: `Too many characters! Reduce to ${MAX_CHARS} or fewer.`,
                 position: 'top',
                 duration: 3000
             });
@@ -84,9 +141,11 @@ class App {
 
         this.showMiniLoader();
         await Store.addTask(newTask);
-        await this.renderTasks(false); // No skeletons for add
+        await this.renderTasks(false);
         this.hideMiniLoader();
         this.taskInput.value = '';
+        this.charCounter.classList.remove('visible', 'warning', 'error');
+        this.charCount.textContent = '0';
         this.taskInput.focus();
     }
 

@@ -96,10 +96,92 @@
     gap: 0.3rem;
 }
 
-.task-text {
+.task-text-wrapper {
     flex: 1;
+    position: relative;
+    overflow: hidden;
+    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+
+    &.truncated {
+        max-height: 4.8em; /* ~3 lines */
+
+        &::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2em;
+            background: linear-gradient(to bottom, transparent, rgba(30, 41, 59, 0.95));
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+    }
+
+    &.expanded {
+        max-height: 2000px; /* large enough for any text */
+
+        &::after {
+            opacity: 0;
+        }
+    }
+}
+
+.task-text {
     font-size: 1rem;
-    // word-break: break-all;
+    display: block;
+    word-break: break-word;
+}
+
+/* Expand / Collapse Button */
+.expand-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 0.3rem 0;
+    color: #94a3b8;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    margin-top: 0.15rem;
+
+    &:hover {
+        background: rgba(255, 255, 255, 0.08);
+        color: #e2e8f0;
+    }
+
+    .expand-btn-icon {
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    &.expanded .expand-btn-icon {
+        transform: rotate(180deg);
+    }
+
+    &.expand-btn-bottom {
+        opacity: 0;
+        max-height: 0;
+        padding: 0;
+        margin: 0;
+        border-color: transparent;
+        pointer-events: none;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow: hidden;
+
+        &.visible {
+            opacity: 1;
+            max-height: 40px;
+            padding: 0.3rem 0;
+            margin-top: 0.15rem;
+            border-color: rgba(255, 255, 255, 0.08);
+            pointer-events: auto;
+        }
+    }
 }
 
 .task-timestamp {
