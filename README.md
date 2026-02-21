@@ -1,13 +1,29 @@
 # Premium To-Do List
 
-A modern, high-performance To-Do list application featuring a premium "glassmorphism" design, smooth animations, and a modular JavaScript architecture.
+A modern, high-performance To-Do list application featuring a premium "glassmorphism" design, smooth animations, and a modular JavaScript architecture. Supports PWA (Progressive Web App) for installable mobile experience.
 
 ## Features
-- **Premium UI**: Glassmorphism design with animated background globes.
-- **Drag & Drop**: Native HTML5 drag-and-drop for reordering tasks.
-- **Smart Animations**: "Evaporate" effect on delete with smooth list collapse.
-- **State Management**: Tasks persist via `localStorage` (order, text, completed status).
-- **Completion Tracking**: Tasks can be marked as "Done", persisting their state.
+
+### Task Management
+- **Create Tasks** — input field with empty-value validation (shows a tooltip warning).
+- **Edit Tasks** — animated modal dialog with `Ctrl+Enter` to save and `Escape` to cancel.
+- **Delete Tasks** — "evaporate" animation effect with smooth list collapse.
+- **Toggle Completion** — checkbox to mark tasks as done, synced with the server.
+- **Drag & Drop Reorder** — desktop (HTML5 Drag & Drop via drag-handle) and mobile (Touch Events with a visual clone).
+- **Timestamps** — each task displays its creation date & time.
+
+### UI / UX
+- **Glassmorphism Design** — frosted-glass cards with animated gradient background globes.
+- **Skeleton Loaders** — animated placeholder cards shown during initial data fetch.
+- **Tooltips** — reusable tooltip module with 4 positions (`top`, `right`, `bottom`, `left`), auto-hide, and viewport boundary detection.
+- **Mini-Loader** — header spinner shown during any server operation.
+- **Responsive** — fully adaptive layout for desktop and mobile devices.
+- **Typography** — [Outfit](https://fonts.google.com/specimen/Outfit) font from Google Fonts.
+
+### PWA (Progressive Web App)
+- **Service Worker** — Cache First for static assets, Network First for API calls. Automatic cleanup of old caches.
+- **Web App Manifest** — icons, theme color, standalone display mode for home screen installation.
+- **iOS Support** — meta tags for `apple-mobile-web-app-capable` and `apple-touch-icon`.
 
 ## Architecture
 
@@ -17,7 +33,33 @@ The project is split into two parts:
 
 ## Tech Stack
 - **Frontend**: Vite, Sass (SCSS), Vanilla JavaScript (ES Modules).
-- **Backend**: Node.js, Express, Sequelize, SQLite (Auto-generated database).
+- **Backend**: Node.js, Express, Sequelize ORM.
+- **Database**: SQLite (development), PostgreSQL (production).
+- **PWA**: Service Worker, Web App Manifest.
+- **Deploy**: Vercel (frontend), Render (backend + PostgreSQL).
+
+## API Endpoints
+
+| Method   | Endpoint                   | Description                            |
+|----------|----------------------------|----------------------------------------|
+| `GET`    | `/api/tasks`               | Get all tasks (sorted by `order`)      |
+| `POST`   | `/api/tasks`               | Create a new task                      |
+| `PUT`    | `/api/tasks/:id`           | Update a task (text or completed)      |
+| `PUT`    | `/api/tasks/reorder/batch` | Batch update task order                |
+| `DELETE` | `/api/tasks/:id`           | Delete a task                          |
+| `GET`    | `/health`                  | Health check (status, DB type, time)   |
+
+## Frontend Modules
+
+| Module       | Description                                                                                          |
+|--------------|------------------------------------------------------------------------------------------------------|
+| `App`        | Main application class — handles init, rendering, and orchestrates all operations.                   |
+| `Store`      | Static HTTP client — `fetch` wrapper for all API calls (`getTasks`, `addTask`, `deleteTask`, etc.).   |
+| `TaskItem`   | DOM factory — creates `<li>` with drag-handle, checkbox, text, edit/delete buttons, and timestamp.   |
+| `DragDrop`   | Drag & drop manager — HTML5 DnD (desktop) + Touch Events with a floating clone (mobile).            |
+| `EditModal`  | Animated edit dialog — opens from the task card position, validates empty text, keyboard shortcuts.   |
+| `Skeleton`   | Generates animated skeleton placeholder cards during initial data load.                               |
+| `Tooltip`    | Reusable tooltip class — 4 positions, auto-hide timer, viewport boundary checks, CSS animations.     |
 
 ## Getting Started
 
@@ -47,11 +89,22 @@ npm run dev
 
 The `database.sqlite` file will be automatically created in the `backend` folder upon first run.
 
+### Environment Variables (Backend)
+
+Copy `backend/.env.example` to `backend/.env`:
+
+| Variable         | Description                                   | Default                 |
+|------------------|-----------------------------------------------|-------------------------|
+| `PORT`           | Server port                                   | `3000`                  |
+| `NODE_ENV`       | Environment (`development` / `production`)    | `development`           |
+| `FRONTEND_URL`   | Frontend URL for CORS                         | `http://localhost:5173` |
+| `DATABASE_URL`   | PostgreSQL connection string (empty = SQLite)  | —                       |
+
 ## Build & Deployment
 
 This project consists of two distinct parts that need to be deployed:
 1. **Frontend**: A static Single Page Application (Vite).
-2. **Backend**: A Node.js Express API server (DB: SQLite).
+2. **Backend**: A Node.js Express API server (DB: SQLite / PostgreSQL).
 
 ### 1. Configuration (Environment Variables)
 
