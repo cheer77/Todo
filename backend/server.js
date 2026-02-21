@@ -52,9 +52,19 @@ io.on('connection', (socket) => {
 
 // Database Connection & Sync
 sequelize.sync()
-  .then(() => {
+  .then(async () => {
     console.log(`Database synced (${sequelize.getDialect()})`);
     console.log(`Using: ${process.env.DATABASE_URL ? 'PostgreSQL' : 'SQLite'}`);
+
+    // Auto-migrate: ensure text column is TEXT (not VARCHAR(255))
+    if (process.env.DATABASE_URL) {
+      try {
+        await sequelize.query('ALTER TABLE "Tasks" ALTER COLUMN "text" TYPE TEXT;');
+        console.log('✅ Auto-migration: text column set to TEXT');
+      } catch (e) {
+        // Already migrated or no change needed — safe to ignore
+      }
+    }
   })
   .catch(err => console.error('Database sync error:', err));
 
