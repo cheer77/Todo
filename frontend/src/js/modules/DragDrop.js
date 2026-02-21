@@ -117,8 +117,10 @@ export class DragDrop {
     }
 
     handleTouchEnd(e) {
+        if (!this.dragSrcEl && !this.clone) return; // No drag in progress — don't interfere
+
+        e.preventDefault();
         if (this.dragSrcEl) {
-            e.preventDefault(); // Only block if we were dragging
             this.dragSrcEl.classList.remove('dragging');
             this.dragSrcEl = null;
         }
