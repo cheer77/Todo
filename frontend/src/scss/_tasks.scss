@@ -219,9 +219,9 @@
 }
 
 /* Drag Over Effect */
-.task-list.drag-over {
-    /* Optional visual cue for list container */
-}
+/* .task-list.drag-over {
+    // Optional visual cue for list container
+} */
 
 /* Completed Task Styling */
 .task-item.completed {
@@ -308,4 +308,55 @@
     -webkit-transform: rotate(45deg);
     -ms-transform: rotate(45deg);
     transform: rotate(45deg);
+}
+
+/* Filters */
+.filters-container {
+    display: flex;
+    justify-content: center;
+    // margin-bottom: 1.5rem;
+
+    .filters {
+        display: inline-flex;
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+        border-radius: 12px;
+        padding: 4px;
+        gap: 4px;
+        border: 1px solid var(--glass-border);
+
+        .filter-btn {
+            appearance: none;
+            border: none;
+            background: transparent;
+            padding: 6px 16px;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #94a3b8;
+            cursor: pointer;
+            transition: all 0.2s ease;
+
+            &:hover {
+                color: #e2e8f0;
+                background: rgba(255, 255, 255, 0.05);
+            }
+
+            &.active {
+                background: rgba(255, 255, 255, 0.15);
+                color: #ffffff;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+        }
+    }
+}
+
+/* Hide drag handles when filtered so order cannot be messed up */
+.task-list.filtered {
+    .drag-handle {
+        opacity: 0.2 !important;
+        pointer-events: none !important;
+        cursor: default !important;
+    }
 }

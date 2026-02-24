@@ -18,12 +18,15 @@ class App {
         this.charCounter = document.getElementById('char-counter');
         this.charCount = document.getElementById('char-count');
 
+        this.currentFilter = localStorage.getItem('todoFilter') || 'all';
+
         this.init();
     }
 
     async init() {
         await this.renderTasks(true); // true for initial load
         this.setupEventListeners();
+        this.setupFilters();
         this.setupCharCounter();
         this.setupDragDrop();
         this.setupSocket();
@@ -57,6 +60,41 @@ class App {
             if (e.key === 'Enter') {
                 this.addTask();
             }
+        });
+    }
+
+    setupFilters() {
+        this.filterBtns = document.querySelectorAll('.filter-btn');
+        
+        // Initialize active state based on currentFilter
+        this.filterBtns.forEach(btn => {
+            if (btn.dataset.filter === this.currentFilter) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+        
+        if (this.currentFilter !== 'all') {
+            this.taskList.classList.add('filtered');
+        }
+
+        this.filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.filterBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                this.currentFilter = btn.dataset.filter;
+                localStorage.setItem('todoFilter', this.currentFilter);
+                
+                if (this.currentFilter === 'all') {
+                    this.taskList.classList.remove('filtered');
+                } else {
+                    this.taskList.classList.add('filtered');
+                }
+                
+                this.renderTasks(false, true); // true to skip fetching again
+            });
         });
     }
 
@@ -186,6 +224,8 @@ class App {
     }
 
     async handleReorder() {
+        if (this.currentFilter !== 'all') return; // Safety check
+
         // Scrape the DOM to get new order of IDs
         const tasksWithOrder = [];
         this.taskList.querySelectorAll('.task-item').forEach((item, index) => {
@@ -197,27 +237,33 @@ class App {
         this.hideMiniLoader();
     }
 
-    async renderTasks(initialLoad = false) {
+    async renderTasks(initialLoad = false, skipFetch = false) {
         if (initialLoad) {
             Skeleton.render(this.taskList, 5);
         }
 
-        const tasks = await Store.getTasks();
-        
-        // If initial load, we want to clear skeletons.
-        // Actually, we always clear innerHTML below, so it's handled.
-        
+        if (!skipFetch) {
+            this.tasks = await Store.getTasks();
+        }
+
         this.taskList.innerHTML = '';
         
-        if (tasks.length === 0) {
+        let displayTasks = this.tasks || [];
+        if (this.currentFilter === 'active') {
+            displayTasks = displayTasks.filter(t => !t.completed);
+        } else if (this.currentFilter === 'done') {
+            displayTasks = displayTasks.filter(t => t.completed);
+        }
+
+        if (displayTasks.length === 0) {
             const noTasksMsg = document.createElement('div');
             noTasksMsg.className = 'no-tasks-message';
-            noTasksMsg.textContent = 'No tasks yet';
+            noTasksMsg.textContent = 'No tasks found';
             this.taskList.appendChild(noTasksMsg);
             return;
         }
 
-        tasks.forEach((task) => {
+        displayTasks.forEach((task) => {
             const taskElement = TaskItem.create(
                 task, 
                 (id) => this.deleteTask(id), 
