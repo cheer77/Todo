@@ -13,6 +13,7 @@ A modern, high-performance To-Do list application featuring a premium "glassmorp
 - **Timestamps** — each task displays its creation date & time.
 - **Character Limit** — live counter appears on input focus, warns at 90% (yellow) and blocks at 1500 characters (red + tooltip).
 - **Expand / Collapse** — long tasks (>400 chars) are automatically truncated with a gradient fade; "Show more / Show less" buttons with smooth animation and auto-scroll.
+- **Frontend Filtering** — instantly filter views by `All`, `Active`, or `Done` tasks without extra API calls. The selected filter state is preserved across page reloads via `localStorage`.
 - **Real-Time Sync** — powered by Socket.IO. Changes made on one device appear instantly on all other connected devices (like Trello).
 
 ### UI / UX
