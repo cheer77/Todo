@@ -256,10 +256,30 @@ class App {
         }
 
         if (displayTasks.length === 0) {
+            const noTasksContainer = document.createElement('div');
+            noTasksContainer.className = 'no-tasks-container';
+
             const noTasksMsg = document.createElement('div');
             noTasksMsg.className = 'no-tasks-message';
             noTasksMsg.textContent = 'No tasks found';
-            this.taskList.appendChild(noTasksMsg);
+            noTasksContainer.appendChild(noTasksMsg);
+
+            const animationContainer = document.createElement('div');
+            animationContainer.className = 'lottie-cat-animation';
+            noTasksContainer.appendChild(animationContainer);
+
+            // Fetch local cat.json using CDN Lottie script
+            if (window.lottie) {
+                window.lottie.loadAnimation({
+                    container: animationContainer,
+                    renderer: 'svg',
+                    loop: true,
+                    autoplay: true,
+                    path: '/cat.json' 
+                });
+            }
+
+            this.taskList.appendChild(noTasksContainer);
             return;
         }
 
