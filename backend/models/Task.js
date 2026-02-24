@@ -30,6 +30,10 @@ const Task = sequelize.define('Task', {
   order: {
     type: DataTypes.INTEGER,
     defaultValue: 0
+  },
+  isEdited: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
   }
 });
 

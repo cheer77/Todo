@@ -184,11 +184,30 @@
     }
 }
 
+.task-meta-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-left: 2.5rem; /* Align with text after checkbox */
+}
+
 .task-timestamp {
     font-size: 0.7rem;
     color: #64748b;
     opacity: 0.6;
-    padding-left: 2.5rem; /* Align with text after checkbox */
+}
+
+.task-edited-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+    font-size: 0.65rem;
+    color: #94a3b8;
+    background: rgba(255, 255, 255, 0.066);
+    padding: 0.1rem 0.3rem;
+    border-radius: 4px;
+    border: 1px solid #a855f7;
+    color: #a855f7;
 }
 
 .delete-btn {

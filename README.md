@@ -6,7 +6,7 @@ A modern, high-performance To-Do list application featuring a premium "glassmorp
 
 ### Task Management
 - **Create Tasks** — input field with empty-value validation (shows a tooltip warning).
-- **Edit Tasks** — animated modal dialog with `Ctrl+Enter` to save and `Escape` to cancel.
+- **Edit Tasks** — animated modal dialog with `Ctrl+Enter` to save and `Escape` to cancel. Displays an "edited" indicator next to the timestamp if the text is modified.
 - **Delete Tasks** — "evaporate" animation effect with smooth list collapse.
 - **Toggle Completion** — checkbox to mark tasks as done, synced with the server.
 - **Drag & Drop Reorder** — desktop (HTML5 Drag & Drop via drag-handle) and mobile (Touch Events with a visual clone).

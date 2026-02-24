@@ -64,6 +64,21 @@ sequelize.sync()
       } catch (e) {
         // Already migrated or no change needed — safe to ignore
       }
+      
+      try {
+        await sequelize.query('ALTER TABLE "Tasks" ADD COLUMN "isEdited" BOOLEAN DEFAULT false;');
+        console.log('✅ Auto-migration: isEdited column added');
+      } catch (e) {
+        // Already migrated or no change needed
+      }
+    } else {
+      // SQLite specific migration syntax
+      try {
+        await sequelize.query('ALTER TABLE Tasks ADD COLUMN isEdited BOOLEAN DEFAULT false;');
+        console.log('✅ Auto-migration: isEdited column added (SQLite)');
+      } catch (e) {
+        // Already migrated or no change needed
+      }
     }
   })
   .catch(err => console.error('Database sync error:', err));
@@ -144,7 +159,14 @@ app.put('/api/tasks/:id', async (req, res) => {
     const task = await Task.findByPk(req.params.id);
     if (!task) return res.status(404).json({ message: 'Task not found' });
     
-    await task.update(req.body);
+    const updates = { ...req.body };
+    
+    // Check if text is changing to mark as edited
+    if (req.body.text && req.body.text !== task.text) {
+        updates.isEdited = true;
+    }
+
+    await task.update(updates);
     io.emit('tasks:update');
     res.json(task);
   } catch (error) {
