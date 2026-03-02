@@ -269,6 +269,17 @@ class App {
         this.hideMiniLoader();
     }
 
+    async _loadLottie() {
+        if (window.lottie) return;
+        return new Promise((resolve) => {
+            const s = document.createElement('script');
+            s.src = 'https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js';
+            s.onload = resolve;
+            s.onerror = resolve; // graceful fallback — text still shows
+            document.head.appendChild(s);
+        });
+    }
+
     _ensureLottieContainer() {
         if (!this._lottieContainer) {
             this._lottieContainer = document.createElement('div');
@@ -289,7 +300,6 @@ class App {
             this._lottieAnim.destroy();
             this._lottieAnim = null;
         }
-        // Clear any leftover SVG from previous render
         this._lottieAnimContainer.innerHTML = '';
 
         // Create fresh Lottie animation
@@ -326,6 +336,7 @@ class App {
         }
 
         if (displayTasks.length === 0) {
+            await this._loadLottie();
             const lottieEl = this._ensureLottieContainer();
             this.taskList.appendChild(lottieEl);
             return;

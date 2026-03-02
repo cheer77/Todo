@@ -358,7 +358,8 @@
     .filters {
         display: inline-flex;
         background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(10px);
+        backdrop-filter: blur(6px);
+        contain: layout;
         border-radius: 12px;
         padding: 4px;
         gap: 4px;

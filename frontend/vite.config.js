@@ -7,8 +7,7 @@ export default defineConfig({
     devSourcemap: true // Enable SCSS source maps in dev
   },
   build: {
-    sourcemap: true, // Enable JS source maps in build
-    // outDir: '../dist' // Match standard output
+    sourcemap: false, // Disable in production for smaller output
   },
   server: {
     host: true // Expose to network (good for mobile testing)
