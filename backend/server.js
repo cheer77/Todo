@@ -21,15 +21,17 @@ const corsOptions = {
       process.env.FRONTEND_URL
     ].filter(Boolean); // Remove undefined values
     
-    console.log(`CORS check - Origin: ${origin}`);
-    console.log(`CORS check - Allowed origins:`, allowedOrigins);
+    const isDev = process.env.NODE_ENV !== 'production';
+    if (isDev) {
+      console.log(`CORS check - Origin: ${origin}, Allowed:`, allowedOrigins);
+    }
     
     if (allowedOrigins.indexOf(origin) !== -1) {
-      console.log(`✅ CORS allowed for: ${origin}`);
       callback(null, true);
     } else {
-      console.log(`❌ CORS rejected for: ${origin}`);
-      console.log(`⚠️  Add this origin to FRONTEND_URL env var: ${origin}`);
+      if (isDev) {
+        console.log(`❌ CORS rejected for: ${origin}. Add to FRONTEND_URL env var.`);
+      }
       // Don't throw error, just reject with false
       callback(null, false);
     }
@@ -105,19 +107,14 @@ app.post('/api/tasks', async (req, res) => {
       return res.status(400).json({ message: 'Task text is required' });
     }
     
-    // New tasks get order -1 to appear at top
+    // New tasks appear at top: shift all existing orders up by 1, then assign order 0
+    await Task.increment('order', { by: 1, where: {} });
+    
     const task = await Task.create({
       text: req.body.text,
       completed: req.body.completed,
-      order: -1
+      order: 0
     });
-    
-    // Reorder all tasks to have sequential order starting from 0
-    const allTasks = await Task.findAll({ order: [['order', 'ASC']] });
-    const updates = allTasks.map((t, index) => 
-      Task.update({ order: index }, { where: { id: t.id } })
-    );
-    await Promise.all(updates);
     
     io.emit('tasks:update');
     res.status(201).json(task);
@@ -138,14 +135,17 @@ app.put('/api/tasks/reorder/batch', async (req, res) => {
       return res.status(400).json({ message: 'Invalid data format' });
     }
 
-    const updates = tasks.map(taskItem => 
-      Task.update(
-        { order: taskItem.order },
-        { where: { id: taskItem.id } }
-      )
-    );
+    // Atomic batch update inside a transaction
+    await sequelize.transaction(async (t) => {
+      const updates = tasks.map(taskItem => 
+        Task.update(
+          { order: taskItem.order },
+          { where: { id: taskItem.id }, transaction: t }
+        )
+      );
+      await Promise.all(updates);
+    });
 
-    await Promise.all(updates);
     io.emit('tasks:update');
     res.json({ message: 'Tasks reordered' });
   } catch (error) {

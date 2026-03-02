@@ -17,6 +17,7 @@
 
 		<!-- Theme Color -->
 		<meta name="theme-color" content="#6366f1" />
+		<meta name="description" content="Premium To-Do List with glassmorphism design, drag-and-drop reordering, real-time sync, and PWA support." />
 
 		<title>Premium To-Do List</title>
 		<!-- CSS imported via JS in Vite -->
@@ -24,7 +25,11 @@
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 		<link
 			href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap"
-			rel="stylesheet" />
+			rel="stylesheet"
+			media="print" onload="this.media='all'" />
+		<noscript>
+			<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
+		</noscript>
 	</head>
 	<body>
 		<div class="background-globes">

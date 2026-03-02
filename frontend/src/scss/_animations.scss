@@ -9,14 +9,16 @@
     left: 0;
     z-index: -1;
     overflow: hidden;
+    contain: strict;
 }
 
 .globe {
     position: absolute;
     border-radius: 50%;
-    filter: blur(80px);
+    filter: blur(60px);
     opacity: 0.6;
     animation: float 18s infinite ease-in-out;
+    will-change: transform;
 }
 
 .globe-1 {

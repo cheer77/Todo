@@ -8,6 +8,7 @@ import { Skeleton } from './modules/Skeleton.js';
 import { EditModal } from './modules/EditModal.js';
 
 const MAX_CHARS = 1500;
+const SOCKET_DEBOUNCE_MS = 300;
 
 class App {
     constructor() {
@@ -19,6 +20,11 @@ class App {
         this.charCount = document.getElementById('char-count');
 
         this.currentFilter = localStorage.getItem('todoFilter') || 'all';
+        this._socketDebounceTimer = null;
+        this._lottieContainer = null;
+        this._lottieAnim = null;
+        this._activeTaskItem = null;
+        this._skipNextSocketUpdate = false;
 
         this.init();
     }
@@ -37,8 +43,17 @@ class App {
         this.socket = io(socketUrl);
 
         this.socket.on('tasks:update', () => {
-            console.log('🔄 Real-time update received');
-            this.renderTasks(false);
+            // Debounce rapid socket events (e.g. batch reorder)
+            clearTimeout(this._socketDebounceTimer);
+            this._socketDebounceTimer = setTimeout(() => {
+                // Skip re-render if this client just triggered the update
+                if (this._skipNextSocketUpdate) {
+                    this._skipNextSocketUpdate = false;
+                    return;
+                }
+                console.log('🔄 Real-time update received');
+                this.renderTasks(false);
+            }, SOCKET_DEBOUNCE_MS);
         });
 
         this.socket.on('connect', () => {
@@ -60,6 +75,20 @@ class App {
             if (e.key === 'Enter') {
                 this.addTask();
             }
+        });
+
+        // Event delegation for task active-toggle (replaces per-item querySelectorAll)
+        this.taskList.addEventListener('click', (e) => {
+            const taskItem = e.target.closest('.task-item');
+            if (!taskItem) return;
+            // Ignore clicks on interactive sub-elements
+            if (e.target.closest('.checkbox-container') || e.target.closest('.delete-btn') || e.target.closest('.edit-btn') || e.target.closest('.expand-btn')) return;
+
+            if (this._activeTaskItem && this._activeTaskItem !== taskItem) {
+                this._activeTaskItem.classList.remove('active');
+            }
+            taskItem.classList.toggle('active');
+            this._activeTaskItem = taskItem.classList.contains('active') ? taskItem : null;
         });
     }
 
@@ -141,9 +170,7 @@ class App {
     }
 
     setupDragDrop() {
-        new DragDrop(this.taskList, () => {
-            this.handleReorder();
-        });
+        new DragDrop(this.taskList, this.handleReorder.bind(this));
     }
 
     async addTask() {
@@ -178,6 +205,7 @@ class App {
         };
 
         this.showMiniLoader();
+        this._skipNextSocketUpdate = true;
         await Store.addTask(newTask);
         await this.renderTasks(false);
         this.hideMiniLoader();
@@ -189,6 +217,7 @@ class App {
 
     async deleteTask(id) {
         this.showMiniLoader();
+        this._skipNextSocketUpdate = true;
         await Store.deleteTask(id);
         await this.renderTasks(false); 
         this.hideMiniLoader();
@@ -196,6 +225,7 @@ class App {
 
     async toggleTask(id, completed) {
         this.showMiniLoader();
+        this._skipNextSocketUpdate = true;
         await Store.toggleTask(id, completed);
         this.hideMiniLoader();
     }
@@ -207,6 +237,7 @@ class App {
             sourceElement,
             onSave: async (taskId, newText) => {
                 this.showMiniLoader();
+                this._skipNextSocketUpdate = true;
                 try {
                     await Store.updateTask(taskId, newText);
                     // Update text in DOM without re-rendering
@@ -233,8 +264,46 @@ class App {
             tasksWithOrder.push({ id, order: index });
         });
         this.showMiniLoader();
+        this._skipNextSocketUpdate = true;
         await Store.updateOrder(tasksWithOrder);
         this.hideMiniLoader();
+    }
+
+    _ensureLottieContainer() {
+        if (!this._lottieContainer) {
+            this._lottieContainer = document.createElement('div');
+            this._lottieContainer.className = 'no-tasks-container';
+
+            const noTasksMsg = document.createElement('div');
+            noTasksMsg.className = 'no-tasks-message';
+            noTasksMsg.textContent = 'No tasks found';
+            this._lottieContainer.appendChild(noTasksMsg);
+
+            this._lottieAnimContainer = document.createElement('div');
+            this._lottieAnimContainer.className = 'lottie-cat-animation';
+            this._lottieContainer.appendChild(this._lottieAnimContainer);
+        }
+
+        // Destroy previous animation (invalidated by innerHTML = '')
+        if (this._lottieAnim) {
+            this._lottieAnim.destroy();
+            this._lottieAnim = null;
+        }
+        // Clear any leftover SVG from previous render
+        this._lottieAnimContainer.innerHTML = '';
+
+        // Create fresh Lottie animation
+        if (window.lottie) {
+            this._lottieAnim = window.lottie.loadAnimation({
+                container: this._lottieAnimContainer,
+                renderer: 'svg',
+                loop: true,
+                autoplay: true,
+                path: '/cat.json'
+            });
+        }
+
+        return this._lottieContainer;
     }
 
     async renderTasks(initialLoad = false, skipFetch = false) {
@@ -247,6 +316,7 @@ class App {
         }
 
         this.taskList.innerHTML = '';
+        this._activeTaskItem = null;
         
         let displayTasks = this.tasks || [];
         if (this.currentFilter === 'active') {
@@ -256,33 +326,13 @@ class App {
         }
 
         if (displayTasks.length === 0) {
-            const noTasksContainer = document.createElement('div');
-            noTasksContainer.className = 'no-tasks-container';
-
-            const noTasksMsg = document.createElement('div');
-            noTasksMsg.className = 'no-tasks-message';
-            noTasksMsg.textContent = 'No tasks found';
-            noTasksContainer.appendChild(noTasksMsg);
-
-            const animationContainer = document.createElement('div');
-            animationContainer.className = 'lottie-cat-animation';
-            noTasksContainer.appendChild(animationContainer);
-
-            // Fetch local cat.json using CDN Lottie script
-            if (window.lottie) {
-                window.lottie.loadAnimation({
-                    container: animationContainer,
-                    renderer: 'svg',
-                    loop: true,
-                    autoplay: true,
-                    path: '/cat.json' 
-                });
-            }
-
-            this.taskList.appendChild(noTasksContainer);
+            const lottieEl = this._ensureLottieContainer();
+            this.taskList.appendChild(lottieEl);
             return;
         }
 
+        // Batch DOM insertion via DocumentFragment (single reflow)
+        const fragment = document.createDocumentFragment();
         displayTasks.forEach((task) => {
             const taskElement = TaskItem.create(
                 task, 
@@ -290,8 +340,9 @@ class App {
                 (id, completed) => this.toggleTask(id, completed),
                 (id, text, el) => this.editTask(id, text, el)
             );
-            this.taskList.appendChild(taskElement);
+            fragment.appendChild(taskElement);
         });
+        this.taskList.appendChild(fragment);
     }
 }
 

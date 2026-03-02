@@ -28,6 +28,7 @@ export class DragDrop {
 
         setTimeout(() => {
             target.classList.add('dragging');
+            target.style.willChange = 'transform';
         }, 0);
     }
 
@@ -36,6 +37,7 @@ export class DragDrop {
         const target = e.target.closest('.task-item') || this.dragSrcEl;
         if (target) {
             target.classList.remove('dragging');
+            target.style.willChange = '';
         }
 
         const items = this.listElement.querySelectorAll('.task-item');
@@ -71,6 +73,7 @@ export class DragDrop {
 
         this.dragSrcEl = target;
         this.dragSrcEl.classList.add('dragging');
+        this.dragSrcEl.style.willChange = 'transform';
 
         // Create Clone for visual feedback
         this.clone = target.cloneNode(true);
@@ -122,6 +125,7 @@ export class DragDrop {
         e.preventDefault();
         if (this.dragSrcEl) {
             this.dragSrcEl.classList.remove('dragging');
+            this.dragSrcEl.style.willChange = '';
             this.dragSrcEl = null;
         }
         if (this.clone) {
