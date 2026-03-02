@@ -269,18 +269,7 @@ class App {
         this.hideMiniLoader();
     }
 
-    async _loadLottie() {
-        if (window.lottie) return;
-        return new Promise((resolve) => {
-            const s = document.createElement('script');
-            s.src = 'https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js';
-            s.onload = resolve;
-            s.onerror = resolve; // graceful fallback — text still shows
-            document.head.appendChild(s);
-        });
-    }
-
-    _ensureLottieContainer() {
+    async _ensureLottieContainer() {
         if (!this._lottieContainer) {
             this._lottieContainer = document.createElement('div');
             this._lottieContainer.className = 'no-tasks-container';
@@ -290,9 +279,9 @@ class App {
             noTasksMsg.textContent = 'No tasks found';
             this._lottieContainer.appendChild(noTasksMsg);
 
-            this._lottieAnimContainer = document.createElement('div');
-            this._lottieAnimContainer.className = 'lottie-cat-animation';
-            this._lottieContainer.appendChild(this._lottieAnimContainer);
+            this._lottieCanvas = document.createElement('canvas');
+            this._lottieCanvas.className = 'lottie-cat-animation';
+            this._lottieContainer.appendChild(this._lottieCanvas);
         }
 
         // Destroy previous animation (invalidated by innerHTML = '')
@@ -300,17 +289,18 @@ class App {
             this._lottieAnim.destroy();
             this._lottieAnim = null;
         }
-        this._lottieAnimContainer.innerHTML = '';
 
-        // Create fresh Lottie animation
-        if (window.lottie) {
-            this._lottieAnim = window.lottie.loadAnimation({
-                container: this._lottieAnimContainer,
-                renderer: 'svg',
+        // Dynamic import — Vite code-splits this into a separate chunk
+        try {
+            const { DotLottie } = await import('@lottiefiles/dotlottie-web');
+            this._lottieAnim = new DotLottie({
+                canvas: this._lottieCanvas,
+                src: '/cat.lottie',
                 loop: true,
                 autoplay: true,
-                path: '/cat.json'
             });
+        } catch (e) {
+            console.warn('DotLottie failed to load:', e);
         }
 
         return this._lottieContainer;
@@ -336,8 +326,7 @@ class App {
         }
 
         if (displayTasks.length === 0) {
-            await this._loadLottie();
-            const lottieEl = this._ensureLottieContainer();
+            const lottieEl = await this._ensureLottieContainer();
             this.taskList.appendChild(lottieEl);
             return;
         }
