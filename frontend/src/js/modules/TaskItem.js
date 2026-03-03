@@ -1,3 +1,5 @@
+import { TrashTimer } from './TrashTimer.js';
+
 // Pre-built SVG templates — created once, cloned per task (avoids repeated HTML parsing)
 const _svgNS = 'http://www.w3.org/2000/svg';
 
@@ -32,126 +34,7 @@ const RESTORE_ICON = _createSvgTemplate(
     16, 16
 );
 
-const TRASH_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
-
 export class TaskItem {
-    /**
-     * Compute remaining time and progress for a trashed task.
-     */
-    static _computeTrashProgress(deletedAt) {
-        const elapsed = Date.now() - new Date(deletedAt).getTime();
-        const remaining = Math.max(0, TRASH_TTL_MS - elapsed);
-        const fraction = remaining / TRASH_TTL_MS;
-
-        let label;
-        const totalMinutes = Math.floor(remaining / 60000);
-        const hours = Math.floor(totalMinutes / 60);
-        const minutes = totalMinutes % 60;
-        if (hours > 0) {
-            label = `${hours}h ${minutes}m`;
-        } else {
-            label = `${minutes}m`;
-        }
-
-        return { remainingMs: remaining, fraction, label };
-    }
-
-    /**
-     * Creates a small SVG ring timer + text for the trash countdown.
-     */
-    static renderTimer(deletedAt) {
-        const { fraction, label } = TaskItem._computeTrashProgress(deletedAt);
-
-        const container = document.createElement('div');
-        container.classList.add('trash-timer');
-
-        // SVG ring
-        const size = 18;
-        const strokeWidth = 2;
-        const radius = (size - strokeWidth) / 2;
-        const circumference = 2 * Math.PI * radius;
-        const dashOffset = circumference * (1 - fraction);
-
-        const svg = document.createElementNS(_svgNS, 'svg');
-        svg.setAttribute('width', size);
-        svg.setAttribute('height', size);
-        svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
-        svg.classList.add('trash-timer-ring');
-
-        // Background circle
-        const bgCircle = document.createElementNS(_svgNS, 'circle');
-        bgCircle.setAttribute('cx', size / 2);
-        bgCircle.setAttribute('cy', size / 2);
-        bgCircle.setAttribute('r', radius);
-        bgCircle.setAttribute('fill', 'none');
-        bgCircle.setAttribute('stroke', 'rgba(255,255,255,0.08)');
-        bgCircle.setAttribute('stroke-width', strokeWidth);
-
-        // Progress circle
-        const progressCircle = document.createElementNS(_svgNS, 'circle');
-        progressCircle.setAttribute('cx', size / 2);
-        progressCircle.setAttribute('cy', size / 2);
-        progressCircle.setAttribute('r', radius);
-        progressCircle.setAttribute('fill', 'none');
-        progressCircle.setAttribute('stroke', 'url(#trash-timer-gradient)');
-        progressCircle.setAttribute('stroke-width', strokeWidth);
-        progressCircle.setAttribute('stroke-linecap', 'round');
-        progressCircle.setAttribute('stroke-dasharray', circumference);
-        progressCircle.setAttribute('stroke-dashoffset', dashOffset);
-        progressCircle.setAttribute('transform', `rotate(-90 ${size / 2} ${size / 2})`);
-        progressCircle.classList.add('trash-timer-progress');
-
-        // Gradient definition
-        const defs = document.createElementNS(_svgNS, 'defs');
-        const gradient = document.createElementNS(_svgNS, 'linearGradient');
-        gradient.setAttribute('id', 'trash-timer-gradient');
-        const stop1 = document.createElementNS(_svgNS, 'stop');
-        stop1.setAttribute('offset', '0%');
-        stop1.setAttribute('stop-color', '#6366f1');
-        const stop2 = document.createElementNS(_svgNS, 'stop');
-        stop2.setAttribute('offset', '100%');
-        stop2.setAttribute('stop-color', '#a855f7');
-        gradient.appendChild(stop1);
-        gradient.appendChild(stop2);
-        defs.appendChild(gradient);
-        svg.appendChild(defs);
-
-        svg.appendChild(bgCircle);
-        svg.appendChild(progressCircle);
-        container.appendChild(svg);
-
-        // Text below the ring
-        const text = document.createElement('span');
-        text.classList.add('trash-timer-text');
-        text.textContent = label;
-        container.appendChild(text);
-
-        return container;
-    }
-
-    /**
-     * Updates existing timer elements in the DOM without re-creating them.
-     */
-    static updateTimerInPlace(timerEl, deletedAt) {
-        const { fraction, label } = TaskItem._computeTrashProgress(deletedAt);
-
-        const size = 18;
-        const strokeWidth = 2;
-        const radius = (size - strokeWidth) / 2;
-        const circumference = 2 * Math.PI * radius;
-        const dashOffset = circumference * (1 - fraction);
-
-        const progress = timerEl.querySelector('.trash-timer-progress');
-        if (progress) {
-            progress.setAttribute('stroke-dashoffset', dashOffset);
-        }
-
-        const text = timerEl.querySelector('.trash-timer-text');
-        if (text) {
-            text.textContent = label;
-        }
-    }
-
     static create(taskObj, onDelete, onToggle, onEdit, options = {}) {
         const isTrash = options.isTrash || false;
         const onRestore = options.onRestore || null;
@@ -216,7 +99,7 @@ export class TaskItem {
             taskContent.appendChild(checkboxLabel);
         } else {
             // Timer for trash mode
-            const timer = TaskItem.renderTimer(taskObj.deletedAt);
+            const timer = TrashTimer.render(taskObj.deletedAt);
             taskContent.appendChild(timer);
         }
 

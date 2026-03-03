@@ -2,6 +2,7 @@ import '../scss/style.scss';
 import { io } from 'socket.io-client';
 import { Store } from './modules/Store.js';
 import { TaskItem } from './modules/TaskItem.js';
+import { TrashTimer } from './modules/TrashTimer.js';
 import { DragDrop } from './modules/DragDrop.js';
 import { Tooltip } from './modules/Tooltip.js';
 import { Skeleton } from './modules/Skeleton.js';
@@ -326,7 +327,7 @@ class App {
                 const timerEl = li.querySelector('.trash-timer');
                 const deletedAt = li.dataset.deletedAt;
                 if (timerEl && deletedAt) {
-                    TaskItem.updateTimerInPlace(timerEl, deletedAt);
+                    TrashTimer.updateInPlace(timerEl, deletedAt);
                 }
             });
         }, TRASH_TIMER_INTERVAL_MS);
