@@ -376,6 +376,7 @@
             color: #94a3b8;
             cursor: pointer;
             transition: all 0.2s ease;
+            position: relative;
 
             &:hover {
                 color: #e2e8f0;
@@ -386,7 +387,30 @@
                 background: rgba(255, 255, 255, 0.15);
                 color: #ffffff;
                 box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+
+                .filter-count {
+                    background: rgba(255, 255, 255, 0.25);
+                    color: #fff;
+                }
             }
+        }
+
+        .filter-count {
+            position: absolute;
+            top: 1px;
+            right: 0px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 14px;
+            height: 14px;
+            padding: 0 3px;
+            border-radius: 7px;
+            background: rgba(255, 255, 255, 0.1);
+            font-size: 0.55rem;
+            font-weight: 600;
+            line-height: 1;
+            color: #94a3b8;
         }
     }
 }

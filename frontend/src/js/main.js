@@ -384,10 +384,16 @@ class App {
         const isTrashView = this.currentFilter === 'trash';
 
         if (!skipFetch) {
+            // Always fetch both to keep counters accurate
+            const fetches = [];
             if (isTrashView) {
                 this.trashTasks = await Store.getTrashTasks();
+                // Also refresh normal tasks in background for counter
+                Store.getTasks().then(t => { this.tasks = t; this._updateFilterCounts(); });
             } else {
                 this.tasks = await Store.getTasks();
+                // Also refresh trash tasks in background for counter
+                Store.getTrashTasks().then(t => { this.trashTasks = t; this._updateFilterCounts(); });
             }
         }
 
@@ -421,6 +427,7 @@ class App {
                 msg.textContent = isTrashView ? 'Trash is empty' : 'No tasks found';
             }
             this.taskList.appendChild(lottieEl);
+            this._updateFilterCounts();
             return;
         }
 
@@ -441,6 +448,35 @@ class App {
             fragment.appendChild(taskElement);
         });
         this.taskList.appendChild(fragment);
+
+        this._updateFilterCounts();
+    }
+
+    _updateFilterCounts() {
+        if (!this.filterBtns) return; // not yet initialized
+
+        const tasks = this.tasks || [];
+        const trashTasks = this.trashTasks || [];
+
+        const counts = {
+            all: tasks.length,
+            active: tasks.filter(t => !t.completed).length,
+            done: tasks.filter(t => t.completed).length,
+            trash: trashTasks.length
+        };
+
+        this.filterBtns.forEach(btn => {
+            const filter = btn.dataset.filter;
+            const count = counts[filter] ?? 0;
+
+            let badge = btn.querySelector('.filter-count');
+            if (!badge) {
+                badge = document.createElement('span');
+                badge.classList.add('filter-count');
+                btn.appendChild(badge);
+            }
+            badge.textContent = count;
+        });
     }
 }
 
