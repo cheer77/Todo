@@ -35,12 +35,19 @@ class App {
         this.setupFilters();
         this.setupCharCounter();
         this.setupDragDrop();
-        this.setupSocket();
+        // Defer socket connection — not needed for initial render
+        if ('requestIdleCallback' in window) {
+            requestIdleCallback(() => this.setupSocket());
+        } else {
+            setTimeout(() => this.setupSocket(), 200);
+        }
     }
 
     setupSocket() {
         const socketUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-        this.socket = io(socketUrl);
+        this.socket = io(socketUrl, {
+            transports: ['websocket'], // Skip polling — single WS connection instead of 20+ HTTP requests
+        });
 
         this.socket.on('tasks:update', () => {
             // Debounce rapid socket events (e.g. batch reorder)
