@@ -1,26 +1,34 @@
 /**
- * TrashTimer — reusable SVG ring countdown timer for the Smart Trash feature.
+ * TrashTimer — reusable SVG ring countdown timer.
  *
- * Displays a circular progress indicator + remaining time text.
- * Used by TaskItem to render timers inside trashed task cards,
- * and by App to patch them every minute without full re-renders.
+ * A generic countdown component that displays a circular progress ring
+ * with remaining time text. Can be used with ANY duration — default is 24h
+ * for the Smart Trash feature, but you can pass a custom TTL for other uses.
  *
  * Usage:
  *   import { TrashTimer } from './TrashTimer.js';
  *
- *   const el = TrashTimer.render(task.deletedAt);   // create DOM element
- *   TrashTimer.updateInPlace(el, task.deletedAt);   // patch existing element
+ *   // Default 24h timer (Smart Trash)
+ *   const el = TrashTimer.render(task.deletedAt);
+ *
+ *   // Custom 3-hour timer
+ *   const el = TrashTimer.render(startTime, 3 * 60 * 60 * 1000);
+ *
+ *   // Patch existing element
+ *   TrashTimer.updateInPlace(el, startTime);          // 24h default
+ *   TrashTimer.updateInPlace(el, startTime, 3 * 3600000); // custom TTL
  */
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
-// ── Configuration ──────────────────────────────────────────────────────────────
-/** How long a task lives in the trash before auto-purge (must match backend). */
-export const TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+// ── Defaults ───────────────────────────────────────────────────────────────────
+/** Default time-to-live: 24 hours (matches backend purge interval). */
+export const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000;
 
-const RING_SIZE = 18;       // px — outer dimension of the SVG ring
-const RING_STROKE = 2;      // px — stroke width
-const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2;
+// ── Ring geometry ──────────────────────────────────────────────────────────────
+const RING_SIZE          = 18;   // px — outer dimension
+const RING_STROKE        = 2;    // px — stroke thickness
+const RING_RADIUS        = (RING_SIZE - RING_STROKE) / 2;
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 
 // Gradient colours (indigo → purple)
@@ -30,15 +38,16 @@ const GRADIENT_END   = '#a855f7';
 // ── Public API ─────────────────────────────────────────────────────────────────
 export class TrashTimer {
     /**
-     * Compute remaining time and visual progress for a trashed task.
+     * Compute remaining time and visual progress.
      *
-     * @param  {string|Date} deletedAt — ISO-8601 timestamp or Date object
+     * @param  {string|Date} startedAt — when the countdown began (ISO-8601 or Date)
+     * @param  {number}      [ttlMs=DEFAULT_TTL_MS] — total countdown duration in ms
      * @return {{ remainingMs: number, fraction: number, label: string }}
      */
-    static computeProgress(deletedAt) {
-        const elapsed = Date.now() - new Date(deletedAt).getTime();
-        const remaining = Math.max(0, TTL_MS - elapsed);
-        const fraction  = remaining / TTL_MS; // 1 = full, 0 = expired
+    static computeProgress(startedAt, ttlMs = DEFAULT_TTL_MS) {
+        const elapsed   = Date.now() - new Date(startedAt).getTime();
+        const remaining = Math.max(0, ttlMs - elapsed);
+        const fraction  = remaining / ttlMs; // 1 = full, 0 = expired
 
         const totalMinutes = Math.floor(remaining / 60_000);
         const hours   = Math.floor(totalMinutes / 60);
@@ -51,11 +60,12 @@ export class TrashTimer {
     /**
      * Create a new timer DOM element (SVG ring + time text).
      *
-     * @param  {string} deletedAt — ISO-8601 timestamp
+     * @param  {string} startedAt — ISO-8601 timestamp
+     * @param  {number} [ttlMs=DEFAULT_TTL_MS] — total countdown duration in ms
      * @return {HTMLDivElement} .trash-timer container
      */
-    static render(deletedAt) {
-        const { fraction, label } = TrashTimer.computeProgress(deletedAt);
+    static render(startedAt, ttlMs = DEFAULT_TTL_MS) {
+        const { fraction, label } = TrashTimer.computeProgress(startedAt, ttlMs);
 
         // Container
         const container = document.createElement('div');
@@ -114,11 +124,12 @@ export class TrashTimer {
      * Patch an existing timer element in the DOM (text + arc progress).
      * Avoids full re-creation for better performance.
      *
-     * @param {HTMLElement} timerEl  — the .trash-timer container
-     * @param {string}      deletedAt — ISO-8601 timestamp
+     * @param {HTMLElement} timerEl    — the .trash-timer container
+     * @param {string}      startedAt — ISO-8601 timestamp
+     * @param {number}      [ttlMs=DEFAULT_TTL_MS] — total countdown duration in ms
      */
-    static updateInPlace(timerEl, deletedAt) {
-        const { fraction, label } = TrashTimer.computeProgress(deletedAt);
+    static updateInPlace(timerEl, startedAt, ttlMs = DEFAULT_TTL_MS) {
+        const { fraction, label } = TrashTimer.computeProgress(startedAt, ttlMs);
         const dashOffset = RING_CIRCUMFERENCE * (1 - fraction);
 
         const progress = timerEl.querySelector('.trash-timer-progress');
