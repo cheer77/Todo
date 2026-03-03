@@ -3,6 +3,7 @@ const express = require('express');
 const http = require('http');
 const cors = require('cors');
 const { Server } = require('socket.io');
+const { Op } = require('sequelize');
 const { sequelize, Task } = require('./models/Task');
 
 const app = express();
@@ -53,6 +54,25 @@ io.on('connection', (socket) => {
 });
 
 // Database Connection & Sync
+// --- Purge expired trash tasks (older than 24h) ---
+async function purgeExpiredTasks() {
+  try {
+    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const count = await Task.destroy({
+      where: {
+        isDeleted: true,
+        deletedAt: { [Op.lt]: cutoff }
+      }
+    });
+    if (count > 0) {
+      console.log(`🗑️ Purged ${count} expired trash task(s)`);
+      io.emit('tasks:update');
+    }
+  } catch (e) {
+    console.error('Purge error:', e);
+  }
+}
+
 sequelize.sync()
   .then(async () => {
     console.log(`Database synced (${sequelize.getDialect()})`);
@@ -73,6 +93,16 @@ sequelize.sync()
       } catch (e) {
         // Already migrated or no change needed
       }
+
+      try {
+        await sequelize.query('ALTER TABLE "Tasks" ADD COLUMN "isDeleted" BOOLEAN DEFAULT false;');
+        console.log('✅ Auto-migration: isDeleted column added');
+      } catch (e) { /* already exists */ }
+
+      try {
+        await sequelize.query('ALTER TABLE "Tasks" ADD COLUMN "deletedAt" TIMESTAMP;');
+        console.log('✅ Auto-migration: deletedAt column added');
+      } catch (e) { /* already exists */ }
     } else {
       // SQLite specific migration syntax
       try {
@@ -81,16 +111,47 @@ sequelize.sync()
       } catch (e) {
         // Already migrated or no change needed
       }
+
+      try {
+        await sequelize.query('ALTER TABLE Tasks ADD COLUMN isDeleted BOOLEAN DEFAULT false;');
+        console.log('✅ Auto-migration: isDeleted column added (SQLite)');
+      } catch (e) { /* already exists */ }
+
+      try {
+        await sequelize.query('ALTER TABLE Tasks ADD COLUMN deletedAt DATETIME;');
+        console.log('✅ Auto-migration: deletedAt column added (SQLite)');
+      } catch (e) { /* already exists */ }
     }
+
+    // Start hourly purge of expired trash
+    purgeExpiredTasks(); // run once on startup
+    setInterval(purgeExpiredTasks, 60 * 60 * 1000);
+    console.log('🕐 Trash purge cron: every 1 hour');
   })
   .catch(err => console.error('Database sync error:', err));
 
 // Routes
 
-// GET all tasks
+// GET all tasks (excludes soft-deleted)
 app.get('/api/tasks', async (req, res) => {
   try {
-    const tasks = await Task.findAll({ order: [['order', 'ASC']] });
+    const tasks = await Task.findAll({
+      where: { isDeleted: false },
+      order: [['order', 'ASC']]
+    });
+    res.json(tasks);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// GET trash tasks (only soft-deleted)
+app.get('/api/tasks/trash', async (req, res) => {
+  try {
+    const tasks = await Task.findAll({
+      where: { isDeleted: true },
+      order: [['deletedAt', 'ASC']]
+    });
     res.json(tasks);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -124,6 +185,21 @@ app.post('/api/tasks', async (req, res) => {
       message: error.message,
       details: error.errors ? error.errors.map(e => e.message) : undefined
     });
+  }
+});
+
+// POST restore task from trash
+app.post('/api/tasks/:id/restore', async (req, res) => {
+  try {
+    const task = await Task.findByPk(req.params.id);
+    if (!task) return res.status(404).json({ message: 'Task not found' });
+    if (!task.isDeleted) return res.status(400).json({ message: 'Task is not in trash' });
+
+    await task.update({ isDeleted: false, deletedAt: null });
+    io.emit('tasks:update');
+    res.json(task);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 });
 
@@ -174,15 +250,29 @@ app.put('/api/tasks/:id', async (req, res) => {
   }
 });
 
-// DELETE task
+// DELETE task (soft-delete → moves to trash)
 app.delete('/api/tasks/:id', async (req, res) => {
+  try {
+    const task = await Task.findByPk(req.params.id);
+    if (!task) return res.status(404).json({ message: 'Task not found' });
+    
+    await task.update({ isDeleted: true, deletedAt: new Date() });
+    io.emit('tasks:update');
+    res.json({ message: 'Task moved to trash' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// DELETE task permanently (from trash)
+app.delete('/api/tasks/:id/permanent', async (req, res) => {
   try {
     const task = await Task.findByPk(req.params.id);
     if (!task) return res.status(404).json({ message: 'Task not found' });
     
     await task.destroy();
     io.emit('tasks:update');
-    res.json({ message: 'Task deleted' });
+    res.json({ message: 'Task permanently deleted' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

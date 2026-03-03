@@ -9,6 +9,7 @@ import { EditModal } from './modules/EditModal.js';
 
 const MAX_CHARS = 1500;
 const SOCKET_DEBOUNCE_MS = 300;
+const TRASH_TIMER_INTERVAL_MS = 60 * 1000; // 1 minute
 
 class App {
     constructor() {
@@ -18,6 +19,7 @@ class App {
         this.miniLoader = document.getElementById('mini-loader');
         this.charCounter = document.getElementById('char-counter');
         this.charCount = document.getElementById('char-count');
+        this.inputGroup = document.querySelector('.input-group');
 
         this.currentFilter = localStorage.getItem('todoFilter') || 'all';
         this._socketDebounceTimer = null;
@@ -25,6 +27,7 @@ class App {
         this._lottieAnim = null;
         this._activeTaskItem = null;
         this._skipNextSocketUpdate = false;
+        this._trashTimerInterval = null;
 
         this.init();
     }
@@ -89,7 +92,7 @@ class App {
             const taskItem = e.target.closest('.task-item');
             if (!taskItem) return;
             // Ignore clicks on interactive sub-elements
-            if (e.target.closest('.checkbox-container') || e.target.closest('.delete-btn') || e.target.closest('.edit-btn') || e.target.closest('.expand-btn')) return;
+            if (e.target.closest('.checkbox-container') || e.target.closest('.delete-btn') || e.target.closest('.edit-btn') || e.target.closest('.expand-btn') || e.target.closest('.restore-btn')) return;
 
             if (this._activeTaskItem && this._activeTaskItem !== taskItem) {
                 this._activeTaskItem.classList.remove('active');
@@ -115,11 +118,15 @@ class App {
             this.taskList.classList.add('filtered');
         }
 
+        // Toggle input group visibility based on initial filter
+        this._updateInputVisibility();
+
         this.filterBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 this.filterBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 
+                const prevFilter = this.currentFilter;
                 this.currentFilter = btn.dataset.filter;
                 localStorage.setItem('todoFilter', this.currentFilter);
                 
@@ -128,10 +135,24 @@ class App {
                 } else {
                     this.taskList.classList.add('filtered');
                 }
+
+                this._updateInputVisibility();
                 
-                this.renderTasks(false, true); // true to skip fetching again
+                // Always fetch when switching to/from trash (different data source)
+                const needsFetch = this.currentFilter === 'trash' || prevFilter === 'trash';
+                this.renderTasks(false, !needsFetch);
             });
         });
+    }
+
+    _updateInputVisibility() {
+        if (this.inputGroup) {
+            if (this.currentFilter === 'trash') {
+                this.inputGroup.classList.add('hidden');
+            } else {
+                this.inputGroup.classList.remove('hidden');
+            }
+        }
     }
 
     setupCharCounter() {
@@ -230,10 +251,33 @@ class App {
         this.hideMiniLoader();
     }
 
+    async restoreTask(id) {
+        this.showMiniLoader();
+        this._skipNextSocketUpdate = true;
+        try {
+            await Store.restoreTask(id);
+            // Invalidate normal tasks cache so switching to All/Active/Done shows restored task
+            this.tasks = null;
+            await this.renderTasks(false);
+        } catch (e) {
+            console.error('Failed to restore task', e);
+        }
+        this.hideMiniLoader();
+    }
+
+    async permanentDeleteTask(id) {
+        this.showMiniLoader();
+        this._skipNextSocketUpdate = true;
+        await Store.permanentDeleteTask(id);
+        await this.renderTasks(false);
+        this.hideMiniLoader();
+    }
+
     async toggleTask(id, completed) {
         this.showMiniLoader();
         this._skipNextSocketUpdate = true;
         await Store.toggleTask(id, completed);
+        await this.renderTasks(false);
         this.hideMiniLoader();
     }
 
@@ -247,12 +291,8 @@ class App {
                 this._skipNextSocketUpdate = true;
                 try {
                     await Store.updateTask(taskId, newText);
-                    // Update text in DOM without re-rendering
-                    const taskItem = this.taskList.querySelector(`[data-id="${taskId}"]`);
-                    if (taskItem) {
-                        const textSpan = taskItem.querySelector('.task-text');
-                        if (textSpan) textSpan.textContent = newText;
-                    }
+                    // Full re-render to show 'was edited' indicator immediately
+                    await this.renderTasks(false);
                 } catch (e) {
                     console.error('Failed to edit task', e);
                 }
@@ -274,6 +314,29 @@ class App {
         this._skipNextSocketUpdate = true;
         await Store.updateOrder(tasksWithOrder);
         this.hideMiniLoader();
+    }
+
+    // --- Trash timer management ---
+    _startTrashTimers() {
+        this._stopTrashTimers();
+        this._trashTimerInterval = setInterval(() => {
+            // DOM-patch all visible timers without re-render
+            const items = this.taskList.querySelectorAll('.task-item.in-trash');
+            items.forEach(li => {
+                const timerEl = li.querySelector('.trash-timer');
+                const deletedAt = li.dataset.deletedAt;
+                if (timerEl && deletedAt) {
+                    TaskItem.updateTimerInPlace(timerEl, deletedAt);
+                }
+            });
+        }, TRASH_TIMER_INTERVAL_MS);
+    }
+
+    _stopTrashTimers() {
+        if (this._trashTimerInterval) {
+            clearInterval(this._trashTimerInterval);
+            this._trashTimerInterval = null;
+        }
     }
 
     async _ensureLottieContainer() {
@@ -318,22 +381,45 @@ class App {
             Skeleton.render(this.taskList, 5);
         }
 
+        const isTrashView = this.currentFilter === 'trash';
+
         if (!skipFetch) {
-            this.tasks = await Store.getTasks();
+            if (isTrashView) {
+                this.trashTasks = await Store.getTrashTasks();
+            } else {
+                this.tasks = await Store.getTasks();
+            }
         }
 
         this.taskList.innerHTML = '';
         this._activeTaskItem = null;
         
-        let displayTasks = this.tasks || [];
-        if (this.currentFilter === 'active') {
-            displayTasks = displayTasks.filter(t => !t.completed);
-        } else if (this.currentFilter === 'done') {
-            displayTasks = displayTasks.filter(t => t.completed);
+        let displayTasks;
+        if (isTrashView) {
+            displayTasks = this.trashTasks || [];
+        } else {
+            displayTasks = this.tasks || [];
+            if (this.currentFilter === 'active') {
+                displayTasks = displayTasks.filter(t => !t.completed);
+            } else if (this.currentFilter === 'done') {
+                displayTasks = displayTasks.filter(t => t.completed);
+            }
+        }
+
+        // Manage trash timers
+        if (isTrashView) {
+            this._startTrashTimers();
+        } else {
+            this._stopTrashTimers();
         }
 
         if (displayTasks.length === 0) {
             const lottieEl = await this._ensureLottieContainer();
+            // Change message for trash
+            const msg = lottieEl.querySelector('.no-tasks-message');
+            if (msg) {
+                msg.textContent = isTrashView ? 'Trash is empty' : 'No tasks found';
+            }
             this.taskList.appendChild(lottieEl);
             return;
         }
@@ -345,7 +431,12 @@ class App {
                 task, 
                 (id) => this.deleteTask(id), 
                 (id, completed) => this.toggleTask(id, completed),
-                (id, text, el) => this.editTask(id, text, el)
+                (id, text, el) => this.editTask(id, text, el),
+                {
+                    isTrash: isTrashView,
+                    onRestore: isTrashView ? (id) => this.restoreTask(id) : null,
+                    onPermanentDelete: isTrashView ? (id) => this.permanentDeleteTask(id) : null
+                }
             );
             fragment.appendChild(taskElement);
         });

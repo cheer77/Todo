@@ -7,13 +7,14 @@ A modern, high-performance To-Do list application featuring a premium "glassmorp
 ### Task Management
 - **Create Tasks** — input field with empty-value validation (shows a tooltip warning).
 - **Edit Tasks** — animated modal dialog with `Ctrl+Enter` to save and `Escape` to cancel. Displays an "edited" indicator next to the timestamp if the text is modified.
-- **Delete Tasks** — "evaporate" animation effect with smooth list collapse.
+- **Delete Tasks** — soft-delete with "evaporate" animation; tasks move to a **Smart Trash**.
+- **Smart Trash** — deleted tasks live in a dedicated Trash view for 24 hours with a live countdown timer (SVG ring spinner). Tasks can be **restored** before auto-purge.
 - **Toggle Completion** — checkbox to mark tasks as done, synced with the server.
 - **Drag & Drop Reorder** — desktop (HTML5 Drag & Drop via drag-handle) and mobile (Touch Events with a visual clone).
 - **Timestamps** — each task displays its creation date & time.
 - **Character Limit** — live counter appears on input focus, warns at 90% (yellow) and blocks at 1500 characters (red + tooltip).
 - **Expand / Collapse** — long tasks (>400 chars) are automatically truncated with a gradient fade; "Show more / Show less" buttons with smooth animation and auto-scroll.
-- **Frontend Filtering** — instantly filter views by `All`, `Active`, or `Done` tasks without extra API calls. The selected filter state is preserved across page reloads via `localStorage`.
+- **Frontend Filtering** — instantly filter views by `All`, `Active`, `Done`, or `Trash` tasks without extra API calls. The selected filter state is preserved across page reloads via `localStorage`.
 - **Real-Time Sync** — powered by Socket.IO. Changes made on one device appear instantly on all other connected devices (like Trello).
 
 ### UI / UX
@@ -50,7 +51,9 @@ The project is split into two parts:
 | `POST`   | `/api/tasks`               | Create a new task                      |
 | `PUT`    | `/api/tasks/:id`           | Update a task (text or completed)      |
 | `PUT`    | `/api/tasks/reorder/batch` | Batch update task order                |
-| `DELETE` | `/api/tasks/:id`           | Delete a task                          |
+| `DELETE` | `/api/tasks/:id`           | Soft-delete a task (moves to trash)    |
+| `GET`    | `/api/tasks/trash`         | Get all trashed tasks                  |
+| `POST`   | `/api/tasks/:id/restore`   | Restore a task from trash              |
 | `GET`    | `/health`                  | Health check (status, DB type, time)   |
 
 ## Frontend Modules

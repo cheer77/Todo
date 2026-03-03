@@ -27,58 +27,198 @@ const EDITED_ICON = _createSvgTemplate(
     10, 10
 );
 
+const RESTORE_ICON = _createSvgTemplate(
+    '<polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>',
+    16, 16
+);
+
+const TRASH_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+
 export class TaskItem {
-    static create(taskObj, onDelete, onToggle, onEdit) {
+    /**
+     * Compute remaining time and progress for a trashed task.
+     */
+    static _computeTrashProgress(deletedAt) {
+        const elapsed = Date.now() - new Date(deletedAt).getTime();
+        const remaining = Math.max(0, TRASH_TTL_MS - elapsed);
+        const fraction = remaining / TRASH_TTL_MS;
+
+        let label;
+        const totalMinutes = Math.floor(remaining / 60000);
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+        if (hours > 0) {
+            label = `${hours}h ${minutes}m`;
+        } else {
+            label = `${minutes}m`;
+        }
+
+        return { remainingMs: remaining, fraction, label };
+    }
+
+    /**
+     * Creates a small SVG ring timer + text for the trash countdown.
+     */
+    static renderTimer(deletedAt) {
+        const { fraction, label } = TaskItem._computeTrashProgress(deletedAt);
+
+        const container = document.createElement('div');
+        container.classList.add('trash-timer');
+
+        // SVG ring
+        const size = 18;
+        const strokeWidth = 2;
+        const radius = (size - strokeWidth) / 2;
+        const circumference = 2 * Math.PI * radius;
+        const dashOffset = circumference * (1 - fraction);
+
+        const svg = document.createElementNS(_svgNS, 'svg');
+        svg.setAttribute('width', size);
+        svg.setAttribute('height', size);
+        svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
+        svg.classList.add('trash-timer-ring');
+
+        // Background circle
+        const bgCircle = document.createElementNS(_svgNS, 'circle');
+        bgCircle.setAttribute('cx', size / 2);
+        bgCircle.setAttribute('cy', size / 2);
+        bgCircle.setAttribute('r', radius);
+        bgCircle.setAttribute('fill', 'none');
+        bgCircle.setAttribute('stroke', 'rgba(255,255,255,0.08)');
+        bgCircle.setAttribute('stroke-width', strokeWidth);
+
+        // Progress circle
+        const progressCircle = document.createElementNS(_svgNS, 'circle');
+        progressCircle.setAttribute('cx', size / 2);
+        progressCircle.setAttribute('cy', size / 2);
+        progressCircle.setAttribute('r', radius);
+        progressCircle.setAttribute('fill', 'none');
+        progressCircle.setAttribute('stroke', 'url(#trash-timer-gradient)');
+        progressCircle.setAttribute('stroke-width', strokeWidth);
+        progressCircle.setAttribute('stroke-linecap', 'round');
+        progressCircle.setAttribute('stroke-dasharray', circumference);
+        progressCircle.setAttribute('stroke-dashoffset', dashOffset);
+        progressCircle.setAttribute('transform', `rotate(-90 ${size / 2} ${size / 2})`);
+        progressCircle.classList.add('trash-timer-progress');
+
+        // Gradient definition
+        const defs = document.createElementNS(_svgNS, 'defs');
+        const gradient = document.createElementNS(_svgNS, 'linearGradient');
+        gradient.setAttribute('id', 'trash-timer-gradient');
+        const stop1 = document.createElementNS(_svgNS, 'stop');
+        stop1.setAttribute('offset', '0%');
+        stop1.setAttribute('stop-color', '#6366f1');
+        const stop2 = document.createElementNS(_svgNS, 'stop');
+        stop2.setAttribute('offset', '100%');
+        stop2.setAttribute('stop-color', '#a855f7');
+        gradient.appendChild(stop1);
+        gradient.appendChild(stop2);
+        defs.appendChild(gradient);
+        svg.appendChild(defs);
+
+        svg.appendChild(bgCircle);
+        svg.appendChild(progressCircle);
+        container.appendChild(svg);
+
+        // Text below the ring
+        const text = document.createElement('span');
+        text.classList.add('trash-timer-text');
+        text.textContent = label;
+        container.appendChild(text);
+
+        return container;
+    }
+
+    /**
+     * Updates existing timer elements in the DOM without re-creating them.
+     */
+    static updateTimerInPlace(timerEl, deletedAt) {
+        const { fraction, label } = TaskItem._computeTrashProgress(deletedAt);
+
+        const size = 18;
+        const strokeWidth = 2;
+        const radius = (size - strokeWidth) / 2;
+        const circumference = 2 * Math.PI * radius;
+        const dashOffset = circumference * (1 - fraction);
+
+        const progress = timerEl.querySelector('.trash-timer-progress');
+        if (progress) {
+            progress.setAttribute('stroke-dashoffset', dashOffset);
+        }
+
+        const text = timerEl.querySelector('.trash-timer-text');
+        if (text) {
+            text.textContent = label;
+        }
+    }
+
+    static create(taskObj, onDelete, onToggle, onEdit, options = {}) {
+        const isTrash = options.isTrash || false;
+        const onRestore = options.onRestore || null;
+        const onPermanentDelete = options.onPermanentDelete || null;
+
         const li = document.createElement('li');
         li.classList.add('task-item');
+        if (isTrash) li.classList.add('in-trash');
         if (taskObj.completed) {
             li.classList.add('completed');
         }
         li.setAttribute('draggable', 'false');
-        li.dataset.id = taskObj.id; // Store ID for reference
+        li.dataset.id = taskObj.id;
+        if (isTrash && taskObj.deletedAt) {
+            li.dataset.deletedAt = taskObj.deletedAt;
+        }
 
-        // Drag Handle
-        const dragHandle = document.createElement('div');
-        dragHandle.classList.add('drag-handle');
-        dragHandle.appendChild(DRAG_ICON.cloneNode(true));
+        // Task Content Wrapper (main row)
+        const taskContent = document.createElement('div');
+        taskContent.classList.add('task-content');
 
-        // Enable drag only on handle interactions (Desktop)
-        dragHandle.addEventListener('mousedown', () => {
-            li.setAttribute('draggable', 'true');
-        });
-        
-        dragHandle.addEventListener('mouseup', () => {
-            li.setAttribute('draggable', 'false');
-        });
-        dragHandle.addEventListener('mouseleave', () => {
-            li.setAttribute('draggable', 'false');
-        });
+        if (!isTrash) {
+            // Drag Handle
+            const dragHandle = document.createElement('div');
+            dragHandle.classList.add('drag-handle');
+            dragHandle.appendChild(DRAG_ICON.cloneNode(true));
 
-        // Checkbox Container
-        const checkboxLabel = document.createElement('label');
-        checkboxLabel.classList.add('checkbox-container');
-        
-        const checkboxInput = document.createElement('input');
-        checkboxInput.type = 'checkbox';
-        checkboxInput.checked = taskObj.completed;
-        
-        checkboxInput.addEventListener('change', (e) => {
-            onToggle(taskObj.id, taskObj.completed);
-            if (checkboxInput.checked) {
-                li.classList.add('completed');
-            } else {
-                li.classList.remove('completed');
-            }
-        });
-        
-        // Remove stopPropagation to allow normal flow (Task active state excluded by target check below)
-        // checkboxLabel.addEventListener('click', ...); - removed
+            dragHandle.addEventListener('mousedown', () => {
+                li.setAttribute('draggable', 'true');
+            });
+            dragHandle.addEventListener('mouseup', () => {
+                li.setAttribute('draggable', 'false');
+            });
+            dragHandle.addEventListener('mouseleave', () => {
+                li.setAttribute('draggable', 'false');
+            });
 
-        const checkmark = document.createElement('span');
-        checkmark.classList.add('checkmark');
+            taskContent.appendChild(dragHandle);
 
-        checkboxLabel.appendChild(checkboxInput);
-        checkboxLabel.appendChild(checkmark);
+            // Checkbox Container
+            const checkboxLabel = document.createElement('label');
+            checkboxLabel.classList.add('checkbox-container');
+            
+            const checkboxInput = document.createElement('input');
+            checkboxInput.type = 'checkbox';
+            checkboxInput.checked = taskObj.completed;
+            
+            checkboxInput.addEventListener('change', () => {
+                onToggle(taskObj.id, taskObj.completed);
+                if (checkboxInput.checked) {
+                    li.classList.add('completed');
+                } else {
+                    li.classList.remove('completed');
+                }
+            });
+
+            const checkmark = document.createElement('span');
+            checkmark.classList.add('checkmark');
+
+            checkboxLabel.appendChild(checkboxInput);
+            checkboxLabel.appendChild(checkmark);
+            taskContent.appendChild(checkboxLabel);
+        } else {
+            // Timer for trash mode
+            const timer = TaskItem.renderTimer(taskObj.deletedAt);
+            taskContent.appendChild(timer);
+        }
 
         // Task Text
         const TEXT_TRUNCATE_LIMIT = 400;
@@ -122,14 +262,12 @@ export class TaskItem {
                     btn.classList.toggle('expanded', isExpanded);
                 });
 
-                // Show/hide bottom button
                 expandBtnBottom.classList.toggle('visible', isExpanded);
             };
 
             expandBtn.addEventListener('click', toggleExpand);
             expandBtnBottom.addEventListener('click', (e) => {
                 toggleExpand(e);
-                // Scroll the task-list container so this task is at the top
                 setTimeout(() => {
                     const taskList = li.closest('.task-list');
                     if (taskList) {
@@ -140,6 +278,83 @@ export class TaskItem {
                     }
                 }, 50);
             });
+        }
+
+        taskContent.appendChild(textWrapper);
+
+        if (!isTrash) {
+            // Edit Button
+            const editBtn = document.createElement('button');
+            editBtn.classList.add('edit-btn');
+            editBtn.appendChild(EDIT_ICON.cloneNode(true));
+
+            editBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const currentText = span.textContent;
+                onEdit(taskObj.id, currentText, li);
+            });
+
+            // Delete Button
+            const deleteBtn = document.createElement('button');
+            deleteBtn.classList.add('delete-btn');
+            deleteBtn.appendChild(DELETE_ICON.cloneNode(true));
+            
+            deleteBtn.addEventListener('click', () => {
+                li.classList.add('removing');
+                setTimeout(() => {
+                    onDelete(taskObj.id);
+                    li.remove();
+                }, 300);
+            });
+
+            taskContent.appendChild(editBtn);
+            taskContent.appendChild(deleteBtn);
+        } else {
+            // Restore Button for trash mode
+            const restoreBtn = document.createElement('button');
+            restoreBtn.classList.add('restore-btn');
+            restoreBtn.appendChild(RESTORE_ICON.cloneNode(true));
+
+            const restoreLabel = document.createElement('span');
+            restoreLabel.textContent = 'Restore';
+            restoreBtn.appendChild(restoreLabel);
+
+            restoreBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                li.classList.add('restoring');
+                setTimeout(() => {
+                    if (onRestore) onRestore(taskObj.id);
+                }, 350);
+            });
+
+            // Permanent Delete Button for trash
+            const permDeleteBtn = document.createElement('button');
+            permDeleteBtn.classList.add('delete-btn', 'trash-delete-btn');
+            permDeleteBtn.appendChild(DELETE_ICON.cloneNode(true));
+
+            permDeleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                li.classList.add('removing');
+                setTimeout(() => {
+                    if (onPermanentDelete) onPermanentDelete(taskObj.id);
+                    li.remove();
+                }, 300);
+            });
+
+            // Actions wrapper: restore + "or" + delete (vertical stack)
+            const actionsWrapper = document.createElement('div');
+            actionsWrapper.classList.add('trash-actions');
+
+            actionsWrapper.appendChild(restoreBtn);
+
+            const orDivider = document.createElement('span');
+            orDivider.classList.add('trash-actions-or');
+            orDivider.textContent = 'or';
+            actionsWrapper.appendChild(orDivider);
+
+            actionsWrapper.appendChild(permDeleteBtn);
+
+            taskContent.appendChild(actionsWrapper);
         }
 
         // Timestamp & Edited Indicator
@@ -160,7 +375,6 @@ export class TaskItem {
         }
         metaContainer.appendChild(timestamp);
 
-        // Edited Indicator
         if (taskObj.isEdited) {
             const editedIndicator = document.createElement('span');
             editedIndicator.classList.add('task-edited-indicator');
@@ -168,42 +382,6 @@ export class TaskItem {
             editedIndicator.append(' was edited');
             metaContainer.appendChild(editedIndicator);
         }
-
-        // Delete Button
-        // Note: active-toggle is handled via event delegation in App.setupEventListeners()
-
-        const deleteBtn = document.createElement('button');
-        deleteBtn.classList.add('delete-btn');
-        deleteBtn.appendChild(DELETE_ICON.cloneNode(true));
-        
-        deleteBtn.addEventListener('click', () => {
-            li.classList.add('removing');
-            setTimeout(() => {
-                onDelete(taskObj.id);
-                li.remove();
-            }, 300);
-        });
-
-        // Edit Button
-        const editBtn = document.createElement('button');
-        editBtn.classList.add('edit-btn');
-        editBtn.appendChild(EDIT_ICON.cloneNode(true));
-
-        editBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            // Read current text from DOM, not from closure
-            const currentText = span.textContent;
-            onEdit(taskObj.id, currentText, li);
-        });
-
-        // Task Content Wrapper (main row)
-        const taskContent = document.createElement('div');
-        taskContent.classList.add('task-content');
-        taskContent.appendChild(dragHandle);
-        taskContent.appendChild(checkboxLabel);
-        taskContent.appendChild(textWrapper);
-        taskContent.appendChild(editBtn);
-        taskContent.appendChild(deleteBtn);
 
         if (expandBtnBottom) li.appendChild(expandBtnBottom);
         li.appendChild(taskContent);

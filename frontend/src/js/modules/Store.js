@@ -91,4 +91,39 @@ export class Store {
             console.error('Failed to reorder tasks', e);
         }
     }
+
+    static async getTrashTasks() {
+        try {
+            const response = await fetch(`${API_URL}/trash`);
+            if (!response.ok) throw new Error('Failed to fetch trash tasks');
+            return await response.json();
+        } catch (e) {
+            console.error('Failed to load trash tasks', e);
+            return [];
+        }
+    }
+
+    static async restoreTask(id) {
+        try {
+            const response = await fetch(`${API_URL}/${id}/restore`, {
+                method: 'POST'
+            });
+            if (!response.ok) throw new Error('Failed to restore task');
+            return await response.json();
+        } catch (e) {
+            console.error('Failed to restore task', e);
+            throw e;
+        }
+    }
+
+    static async permanentDeleteTask(id) {
+        try {
+            const response = await fetch(`${API_URL}/${id}/permanent`, {
+                method: 'DELETE'
+            });
+            if (!response.ok) throw new Error('Failed to permanently delete task');
+        } catch (e) {
+            console.error('Failed to permanently delete task', e);
+        }
+    }
 }
