@@ -68,7 +68,7 @@ The project is split into two parts:
 | `EditModal`  | Animated edit dialog — opens from the task card position, validates empty text, keyboard shortcuts.   |
 | `Skeleton`   | Generates animated skeleton placeholder cards during initial data load.                               |
 | `Tooltip`    | Reusable tooltip class — 4 positions, auto-hide timer, viewport boundary checks, CSS animations.     |
-| `TrashTimer` | SVG ring countdown timer — computes remaining TTL, renders progress ring, patches DOM in-place.       |
+| `TrashTimer` | Configurable SVG ring countdown — accepts `{ ttl, size, stroke, colors }` options for reuse anywhere. |
 
 ## Getting Started
 
