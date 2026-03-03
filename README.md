@@ -52,8 +52,9 @@ The project is split into two parts:
 | `PUT`    | `/api/tasks/:id`           | Update a task (text or completed)      |
 | `PUT`    | `/api/tasks/reorder/batch` | Batch update task order                |
 | `DELETE` | `/api/tasks/:id`           | Soft-delete a task (moves to trash)    |
-| `GET`    | `/api/tasks/trash`         | Get all trashed tasks                  |
+| `GET`    | `/api/tasks/trash`         | Get trashed tasks (expiring-first)     |
 | `POST`   | `/api/tasks/:id/restore`   | Restore a task from trash              |
+| `DELETE` | `/api/tasks/:id/permanent` | Permanently delete a task              |
 | `GET`    | `/health`                  | Health check (status, DB type, time)   |
 
 ## Frontend Modules
