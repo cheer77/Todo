@@ -330,11 +330,21 @@ class App {
         const tasksWithOrder = [];
         this.taskList.querySelectorAll('.task-item').forEach((item, index) => {
             const id = item.dataset.id;
-            tasksWithOrder.push({ id, order: index });
+            tasksWithOrder.push({ id: Number(id), order: index });
         });
         this.showMiniLoader();
         this._skipNextSocketUpdate = true;
         await Store.updateOrder(tasksWithOrder);
+
+        // Sync local cache so tab-switching doesn't revert to old order
+        if (this.tasks) {
+            const orderMap = new Map(tasksWithOrder.map(t => [t.id, t.order]));
+            this.tasks.forEach(t => {
+                if (orderMap.has(t.id)) t.order = orderMap.get(t.id);
+            });
+            this.tasks.sort((a, b) => a.order - b.order);
+        }
+
         this.hideMiniLoader();
     }
 
