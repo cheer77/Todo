@@ -22,7 +22,7 @@ class App {
         this.charCount = document.getElementById('char-count');
         this.inputGroup = document.querySelector('.input-group');
 
-        this.currentFilter = localStorage.getItem('todoFilter') || 'all';
+        this.currentFilter = localStorage.getItem('todoFilter') || 'active';
         this._socketDebounceTimer = null;
         this._lottieContainer = null;
         this._lottieAnim = null;
