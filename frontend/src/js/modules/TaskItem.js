@@ -51,6 +51,9 @@ export class TaskItem {
         if (isTrash && taskObj.deletedAt) {
             li.dataset.deletedAt = taskObj.deletedAt;
         }
+        if (!isTrash && taskObj.completed && taskObj.completedAt) {
+            li.dataset.completedAt = taskObj.completedAt;
+        }
 
         // Task Content Wrapper (main row)
         const taskContent = document.createElement('div');
@@ -264,6 +267,16 @@ export class TaskItem {
             editedIndicator.appendChild(EDITED_ICON.cloneNode(true));
             editedIndicator.append(' was edited');
             metaContainer.appendChild(editedIndicator);
+        }
+
+        // Completion countdown badge (non-trash completed tasks)
+        if (!isTrash && taskObj.completed && taskObj.completedAt) {
+            const COMPLETION_TTL = 60 * 60 * 1000; // 1 hour
+            const { label, remainingMs } = TrashTimer.computeProgress(taskObj.completedAt, { ttl: COMPLETION_TTL });
+            const countdown = document.createElement('span');
+            countdown.className = 'completion-countdown';
+            countdown.textContent = remainingMs > 0 ? `\uD83D\uDDD1\uFE0F ${label}` : `\uD83D\uDDD1\uFE0F ...`;
+            metaContainer.appendChild(countdown);
         }
 
         if (expandBtnBottom) li.appendChild(expandBtnBottom);

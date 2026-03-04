@@ -10,6 +10,7 @@ A modern, high-performance To-Do list application featuring a premium "glassmorp
 - **Delete Tasks** — soft-delete with "evaporate" animation; tasks move to a **Smart Trash**.
 - **Smart Trash** — deleted tasks live in a dedicated Trash view for 24 hours with a live countdown timer (SVG ring spinner). Tasks can be **restored** before auto-purge.
 - **Toggle Completion** — checkbox to mark tasks as done, synced with the server.
+- **Deferred Deletion** — completed tasks display an inline countdown badge (`🗑 In Trash in 59m`). After **1 hour** of staying completed, the task is automatically moved to Smart Trash. A tooltip notification confirms the scheduled deletion. Unchecking the task instantly cancels the timer.
 - **Drag & Drop Reorder** — desktop (HTML5 Drag & Drop via drag-handle) and mobile (Touch Events with a visual clone).
 - **Timestamps** — each task displays its creation date & time.
 - **Character Limit** — live counter appears on input focus, warns at 90% (yellow) and blocks at 1500 characters (red + tooltip).

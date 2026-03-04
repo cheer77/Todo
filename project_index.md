@@ -86,6 +86,7 @@ Todo/
 | `isEdited` | BOOLEAN | `false` | Флаг «отредактировано» |
 | `isDeleted` | BOOLEAN | `false` | Soft-delete флаг |
 | `deletedAt` | DATE | `null` | Время удаления (для 24ч TTL) |
+| `completedAt` | DATE | `null` | Время выполнения (для 1ч auto-trash) |
 | `createdAt` | DATE | auto | Sequelize timestamp |
 | `updatedAt` | DATE | auto | Sequelize timestamp |
 
@@ -109,6 +110,8 @@ Todo/
 
 **Автоматическая очистка**: `purgeExpiredTasks()` удаляет задачи из корзины старше 24ч. Запускается при старте + cron каждый час.
 
+**Отложенное удаление**: `purgeCompletedTasks()` перемещает завершённые задачи (>1ч) в корзину. Запускается при старте + cron каждую минуту.
+
 ---
 
 ## Frontend Modules
@@ -128,11 +131,12 @@ Todo/
 | `deleteTask(id)` | `Store.deleteTask()` → re-render |
 | `restoreTask(id)` | `Store.restoreTask()` → re-render |
 | `permanentDeleteTask(id)` | `Store.permanentDeleteTask()` → re-render |
-| `toggleTask(id, completed)` | `Store.toggleTask()` → re-render |
+| `toggleTask(id, completed)` | `Store.toggleTask()` → re-render → Tooltip «⏰ In Trash in 1h» |
 | `editTask(id, text, el)` | Открывает `EditModal` → `Store.updateTask()` → re-render |
 | `handleReorder()` | Собирает DOM-порядок → `Store.updateOrder()` |
 | `renderTasks(initialLoad, skipFetch)` | Полный перерендер: fetch → filter → DOM rebuild |
-| `_startTrashTimers()` | Интервальное обновление countdown таймеров |
+| `_startTrashTimers()` | Интервальное обновление countdown таймеров (trash) |
+| `_startCompletionTimers()` | Интервальное обновление countdown таймеров (completed, 1ч) |
 | `_ensureLottieContainer()` | DotLottie анимация кота для «No tasks» |
 | `_updateFilterCounts()` | Обновление badge-счётчиков на кнопках фильтров |
 
@@ -163,6 +167,7 @@ Todo/
 DOM-фабрика. Создаёт `<li class="task-item">` с: drag-handle, checkbox, текст, кнопки edit/delete, timestamp, «edited» badge, expand/collapse (≥400 символов).
 
 Для задач в корзине — кнопки restore/permanent-delete + `TrashTimer`.
+Для выполненных задач (не в корзине) — inline badge `.completion-countdown` с обратным отсчётом до auto-trash (1ч).
 
 SVG-иконки предкомпилированы как шаблоны (`DRAG_ICON`, `EDITED_ICON`, `RESTORE_ICON`).
 

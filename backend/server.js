@@ -73,6 +73,29 @@ async function purgeExpiredTasks() {
   }
 }
 
+// --- Auto-trash completed tasks (older than 1h) ---
+async function purgeCompletedTasks() {
+  try {
+    const cutoff = new Date(Date.now() - 60 * 60 * 1000); // 1 hour ago
+    const [count] = await Task.update(
+      { isDeleted: true, deletedAt: new Date(), completed: true },
+      {
+        where: {
+          completed: true,
+          isDeleted: false,
+          completedAt: { [Op.ne]: null, [Op.lt]: cutoff }
+        }
+      }
+    );
+    if (count > 0) {
+      console.log(`⏰ Auto-trashed ${count} completed task(s)`);
+      io.emit('tasks:update');
+    }
+  } catch (e) {
+    console.error('Completed purge error:', e);
+  }
+}
+
 sequelize.sync()
   .then(async () => {
     console.log(`Database synced (${sequelize.getDialect()})`);
@@ -103,6 +126,11 @@ sequelize.sync()
         await sequelize.query('ALTER TABLE "Tasks" ADD COLUMN "deletedAt" TIMESTAMP;');
         console.log('✅ Auto-migration: deletedAt column added');
       } catch (e) { /* already exists */ }
+
+      try {
+        await sequelize.query('ALTER TABLE "Tasks" ADD COLUMN "completedAt" TIMESTAMP;');
+        console.log('✅ Auto-migration: completedAt column added');
+      } catch (e) { /* already exists */ }
     } else {
       // SQLite specific migration syntax
       try {
@@ -121,12 +149,22 @@ sequelize.sync()
         await sequelize.query('ALTER TABLE Tasks ADD COLUMN deletedAt DATETIME;');
         console.log('✅ Auto-migration: deletedAt column added (SQLite)');
       } catch (e) { /* already exists */ }
+
+      try {
+        await sequelize.query('ALTER TABLE Tasks ADD COLUMN completedAt DATETIME;');
+        console.log('✅ Auto-migration: completedAt column added (SQLite)');
+      } catch (e) { /* already exists */ }
     }
 
     // Start hourly purge of expired trash
     purgeExpiredTasks(); // run once on startup
     setInterval(purgeExpiredTasks, 60 * 60 * 1000);
     console.log('🕐 Trash purge cron: every 1 hour');
+
+    // Start per-minute purge of completed tasks (1h deferred deletion)
+    purgeCompletedTasks(); // run once on startup
+    setInterval(purgeCompletedTasks, 60 * 1000);
+    console.log('⏰ Completed purge cron: every 1 minute');
   })
   .catch(err => console.error('Database sync error:', err));
 
@@ -240,6 +278,13 @@ app.put('/api/tasks/:id', async (req, res) => {
     // Check if text is changing to mark as edited
     if (req.body.text && req.body.text !== task.text) {
         updates.isEdited = true;
+    }
+
+    // Track completion timestamp for deferred deletion (1h auto-trash)
+    if (req.body.completed === true) {
+        updates.completedAt = new Date();
+    } else if (req.body.completed === false) {
+        updates.completedAt = null;
     }
 
     await task.update(updates);

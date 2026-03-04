@@ -43,6 +43,11 @@ const Task = sequelize.define('Task', {
     type: DataTypes.DATE,
     allowNull: true,
     defaultValue: null
+  },
+  completedAt: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    defaultValue: null
   }
 });
 

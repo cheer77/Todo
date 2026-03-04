@@ -29,6 +29,7 @@ class App {
         this._activeTaskItem = null;
         this._skipNextSocketUpdate = false;
         this._trashTimerInterval = null;
+        this._completionTimerInterval = null;
 
         this.init();
     }
@@ -280,6 +281,19 @@ class App {
         await Store.toggleTask(id, completed);
         await this.renderTasks(false);
         this.hideMiniLoader();
+
+        // Show tooltip when marking as completed (completed was false, now true)
+        if (!completed) {
+            const taskEl = this.taskList.querySelector(`[data-id="${id}"]`);
+            if (taskEl) {
+                Tooltip.show({
+                    target: taskEl,
+                    message: '⏰ Task will be moved to Trash in 1 hour',
+                    position: 'top',
+                    duration: 3000
+                });
+            }
+        }
     }
 
     editTask(id, currentText, sourceElement) {
@@ -337,6 +351,30 @@ class App {
         if (this._trashTimerInterval) {
             clearInterval(this._trashTimerInterval);
             this._trashTimerInterval = null;
+        }
+    }
+
+    // --- Completion countdown timer management ---
+    _startCompletionTimers() {
+        this._stopCompletionTimers();
+        this._completionTimerInterval = setInterval(() => {
+            const COMPLETION_TTL = 60 * 60 * 1000; // 1 hour
+            const items = this.taskList.querySelectorAll('.task-item.completed:not(.in-trash)');
+            items.forEach(li => {
+                const completedAt = li.dataset.completedAt;
+                const countdownEl = li.querySelector('.completion-countdown');
+                if (countdownEl && completedAt) {
+                    const { label, remainingMs } = TrashTimer.computeProgress(completedAt, { ttl: COMPLETION_TTL });
+                    countdownEl.textContent = remainingMs > 0 ? `\uD83D\uDDD1\uFE0F ${label}` : `\uD83D\uDDD1\uFE0F ...`;
+                }
+            });
+        }, TRASH_TIMER_INTERVAL_MS);
+    }
+
+    _stopCompletionTimers() {
+        if (this._completionTimerInterval) {
+            clearInterval(this._completionTimerInterval);
+            this._completionTimerInterval = null;
         }
     }
 
@@ -416,8 +454,10 @@ class App {
         // Manage trash timers
         if (isTrashView) {
             this._startTrashTimers();
+            this._stopCompletionTimers();
         } else {
             this._stopTrashTimers();
+            this._startCompletionTimers();
         }
 
         if (displayTasks.length === 0) {
