@@ -133,14 +133,14 @@ Todo/
 | `permanentDeleteTask(id)` | `Store.permanentDeleteTask()` → re-render |
 | `toggleTask(id, completed)` | `Store.toggleTask()` → re-render → Tooltip «⏰ In Trash in 1h» |
 | `editTask(id, text, el)` | Открывает `EditModal` → `Store.updateTask()` → re-render |
-| `handleReorder()` | Собирает DOM-порядок → `Store.updateOrder()` |
+| `handleReorder()` | Собирает DOM-порядок → `Store.updateOrder()` → синхронизирует локальный кэш |
 | `renderTasks(initialLoad, skipFetch)` | Полный перерендер: fetch → filter → DOM rebuild |
 | `_startTrashTimers()` | Интервальное обновление countdown таймеров (trash) |
 | `_startCompletionTimers()` | Интервальное обновление countdown таймеров (completed, 1ч) |
 | `_ensureLottieContainer()` | DotLottie анимация кота для «No tasks» |
 | `_updateFilterCounts()` | Обновление badge-счётчиков на кнопках фильтров |
 
-**Константы**: `MAX_CHARS = 1500`, `SOCKET_DEBOUNCE_MS = 300`, `TRASH_TIMER_INTERVAL_MS = 60000`
+**Константы**: `MAX_CHARS = 1500`, `SOCKET_DEBOUNCE_MS = 300`, `TRASH_TIMER_INTERVAL_MS = 60000`, `COMPLETION_AUTO_TRASH_MS = 3600000` (1ч, должна совпадать с `COMPLETED_AUTO_TRASH_MS` в `server.js`)
 
 ---
 
