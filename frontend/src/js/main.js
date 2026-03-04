@@ -12,6 +12,13 @@ const MAX_CHARS = 1500;
 const SOCKET_DEBOUNCE_MS = 300;
 const TRASH_TIMER_INTERVAL_MS = 60 * 1000; // 1 minute
 
+/**
+ * ⏰ How long a completed task stays before auto-moving to Trash.
+ * Must match COMPLETED_AUTO_TRASH_MS in backend/server.js.
+ * Default: 1 hour (60 * 60 * 1000 ms)
+ */
+const COMPLETION_AUTO_TRASH_MS = 60 * 60 * 1000; // 1 hour
+
 class App {
     constructor() {
         this.taskInput = document.getElementById('task-input');
@@ -288,7 +295,7 @@ class App {
             if (taskEl) {
                 Tooltip.show({
                     target: taskEl,
-                    message: '⏰ Task will be moved to Trash in 1 hour',
+                    message: 'Task will be moved to Trash in 1 hour',
                     position: 'top',
                     duration: 3000
                 });
@@ -358,7 +365,7 @@ class App {
     _startCompletionTimers() {
         this._stopCompletionTimers();
         this._completionTimerInterval = setInterval(() => {
-            const COMPLETION_TTL = 60 * 60 * 1000; // 1 hour
+            const COMPLETION_TTL = COMPLETION_AUTO_TRASH_MS;
             const items = this.taskList.querySelectorAll('.task-item.completed:not(.in-trash)');
             items.forEach(li => {
                 const completedAt = li.dataset.completedAt;

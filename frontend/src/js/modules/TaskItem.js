@@ -271,6 +271,10 @@ export class TaskItem {
 
         // Completion countdown badge (non-trash completed tasks)
         if (!isTrash && taskObj.completed && taskObj.completedAt) {
+            /**
+             * ⏰ Must match COMPLETED_AUTO_TRASH_MS in backend/server.js
+             * and COMPLETION_AUTO_TRASH_MS in main.js
+             */
             const COMPLETION_TTL = 60 * 60 * 1000; // 1 hour
             const { label, remainingMs } = TrashTimer.computeProgress(taskObj.completedAt, { ttl: COMPLETION_TTL });
             const countdown = document.createElement('span');

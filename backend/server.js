@@ -10,6 +10,13 @@ const app = express();
 const httpServer = http.createServer(app);
 const PORT = process.env.PORT || 3000;
 
+/**
+ * ⏰ How long a completed task stays before auto-moving to Trash.
+ * Change this value to adjust the deferred deletion timer.
+ * Default: 1 hour (60 * 60 * 1000 ms)
+ */
+const COMPLETED_AUTO_TRASH_MS = 60 * 60 * 1000; // 1 hour
+
 // Middleware
 const corsOptions = {
   origin: function (origin, callback) {
@@ -76,7 +83,7 @@ async function purgeExpiredTasks() {
 // --- Auto-trash completed tasks (older than 1h) ---
 async function purgeCompletedTasks() {
   try {
-    const cutoff = new Date(Date.now() - 60 * 60 * 1000); // 1 hour ago
+    const cutoff = new Date(Date.now() - COMPLETED_AUTO_TRASH_MS);
     const [count] = await Task.update(
       { isDeleted: true, deletedAt: new Date(), completed: true },
       {
