@@ -41,18 +41,35 @@ async function setup() {
         // 3. Create Attributes
         console.log('🛠️ Creating attributes...');
         const createAttr = async (func, ...args) => {
+            const key = args[2];
             try {
                 await func(...args);
-                console.log(`   ✅ Attribute ${args[2]} created`);
+                console.log(`   ✅ Attribute ${key} created`);
             } catch (e) {
-                if (e.code === 409) console.log(`   ℹ️ Attribute ${args[2]} already exists`);
+                if (e.code === 409) {
+                    // Specific fix for 'order' attribute range
+                    if (key === 'order') {
+                        console.log(`   🔄 Updating 'order' attribute range...`);
+                        try {
+                            await databases.deleteAttribute(databaseId, collectionId, key);
+                            // Wait for deletion
+                            await new Promise(r => setTimeout(r, 2000));
+                            await func(...args);
+                            console.log(`   ✅ Attribute ${key} recreated with new range`);
+                            return;
+                        } catch (err) {
+                            console.warn(`   ⚠️ Could not update 'order' range: ${err.message}`);
+                        }
+                    }
+                    console.log(`   ℹ️ Attribute ${key} already exists`);
+                }
                 else throw e;
             }
         };
 
         await createAttr(databases.createStringAttribute.bind(databases), databaseId, collectionId, 'text', 5000, true);
         await createAttr(databases.createBooleanAttribute.bind(databases), databaseId, collectionId, 'completed', false, false);
-        await createAttr(databases.createIntegerAttribute.bind(databases), databaseId, collectionId, 'order', false, -1000000);
+        await createAttr(databases.createIntegerAttribute.bind(databases), databaseId, collectionId, 'order', false, -1000000, 1000000, 0); // min, max, default
         await createAttr(databases.createBooleanAttribute.bind(databases), databaseId, collectionId, 'isEdited', false, false);
         await createAttr(databases.createBooleanAttribute.bind(databases), databaseId, collectionId, 'isDeleted', false, false);
         await createAttr(databases.createDatetimeAttribute.bind(databases), databaseId, collectionId, 'deletedAt', false);
