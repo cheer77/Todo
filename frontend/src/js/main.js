@@ -1,5 +1,5 @@
 import '../scss/style.scss';
-import { io } from 'socket.io-client';
+import { client } from './appwrite.js';
 import { Store } from './modules/Store.js';
 import { TaskItem } from './modules/TaskItem.js';
 import { TrashTimer } from './modules/TrashTimer.js';
@@ -47,37 +47,37 @@ class App {
         this.setupFilters();
         this.setupCharCounter();
         this.setupDragDrop();
-        // Defer socket connection — not needed for initial render
+        // Defer real-time subscription
         if ('requestIdleCallback' in window) {
-            requestIdleCallback(() => this.setupSocket());
+            requestIdleCallback(() => this.setupRealtime());
         } else {
-            setTimeout(() => this.setupSocket(), 200);
+            setTimeout(() => this.setupRealtime(), 200);
         }
     }
 
-    setupSocket() {
-        const socketUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-        this.socket = io(socketUrl, {
-            transports: ['websocket'], // Skip polling — single WS connection instead of 20+ HTTP requests
-        });
+    setupRealtime() {
+        const DATABASE_ID = import.meta.env.VITE_APPWRITE_DATABASE_ID;
+        const COLLECTION_ID = import.meta.env.VITE_APPWRITE_COLLECTION_ID;
 
-        this.socket.on('tasks:update', () => {
-            // Debounce rapid socket events (e.g. batch reorder)
-            clearTimeout(this._socketDebounceTimer);
-            this._socketDebounceTimer = setTimeout(() => {
-                // Skip re-render if this client just triggered the update
-                if (this._skipNextSocketUpdate) {
-                    this._skipNextSocketUpdate = false;
-                    return;
-                }
-                console.log('🔄 Real-time update received');
-                this.renderTasks(false);
-            }, SOCKET_DEBOUNCE_MS);
-        });
+        // Subscribe to all document events in the collection
+        this.unsubscribe = client.subscribe(
+            `databases.${DATABASE_ID}.collections.${COLLECTION_ID}.documents`,
+            (response) => {
+                // Debounce rapid events
+                clearTimeout(this._socketDebounceTimer);
+                this._socketDebounceTimer = setTimeout(() => {
+                    // Skip re-render if this client just triggered the update
+                    if (this._skipNextSocketUpdate) {
+                        this._skipNextSocketUpdate = false;
+                        return;
+                    }
+                    console.log('🔄 Real-time update received from Appwrite');
+                    this.renderTasks(false);
+                }, SOCKET_DEBOUNCE_MS);
+            }
+        );
 
-        this.socket.on('connect', () => {
-            console.log('🔌 Connected to server:', this.socket.id);
-        });
+        console.log('🔌 Subscribed to Appwrite Real-time');
     }
 
     showMiniLoader() {
@@ -330,7 +330,7 @@ class App {
         const tasksWithOrder = [];
         this.taskList.querySelectorAll('.task-item').forEach((item, index) => {
             const id = item.dataset.id;
-            tasksWithOrder.push({ id: Number(id), order: index });
+            tasksWithOrder.push({ id, order: index });
         });
         this.showMiniLoader();
         this._skipNextSocketUpdate = true;

@@ -1,11 +1,24 @@
-const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/api/tasks';
+import { databases } from '../appwrite.js';
+import { ID, Query } from 'appwrite';
+
+const DATABASE_ID = import.meta.env.VITE_APPWRITE_DATABASE_ID;
+const COLLECTION_ID = import.meta.env.VITE_APPWRITE_COLLECTION_ID;
 
 export class Store {
     static async getTasks() {
         try {
-            const response = await fetch(API_URL);
-            if (!response.ok) throw new Error('Failed to fetch tasks');
-            return await response.json();
+            const response = await databases.listDocuments(
+                DATABASE_ID,
+                COLLECTION_ID,
+                [
+                    Query.equal('isDeleted', false),
+                    Query.orderAsc('order')
+                ]
+            );
+            return response.documents.map(doc => ({
+                id: doc.$id,
+                ...doc
+            }));
         } catch (e) {
             console.error('Failed to load tasks', e);
             return [];
@@ -14,37 +27,45 @@ export class Store {
 
     static async addTask(task) {
         try {
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(task)
-            });
+            // New tasks appear at top: we should ideally handle order on server
+            // But for now, we'll just create it. 
+            // Note: In a real app, you might want an Appwrite Function or client-side order calc
             
-            if (!response.ok) {
-                // Log detailed error information
-                const errorData = await response.json().catch(() => ({}));
-                console.error('Server error details:', {
-                    status: response.status,
-                    statusText: response.statusText,
-                    errorData: errorData,
-                    taskLength: task.text?.length || 0
-                });
-                throw new Error(errorData.message || 'Failed to add task');
-            }
+            const response = await databases.createDocument(
+                DATABASE_ID,
+                COLLECTION_ID,
+                ID.unique(),
+                {
+                    text: task.text,
+                    completed: task.completed || false,
+                    order: 0, // Simplified: needs proper order handling
+                    createdAt: task.createdAt || new Date().toISOString(),
+                    isDeleted: false,
+                    isEdited: false
+                }
+            );
             
-            return await response.json(); // Returns the created task with ID
+            return {
+                id: response.$id,
+                ...response
+            };
         } catch (e) {
             console.error('Failed to add task', e);
-            throw e; // Re-throw to let caller handle it
+            throw e;
         }
     }
 
     static async deleteTask(id) {
         try {
-            const response = await fetch(`${API_URL}/${id}`, {
-                method: 'DELETE'
-            });
-            if (!response.ok) throw new Error('Failed to delete task');
+            await databases.updateDocument(
+                DATABASE_ID,
+                COLLECTION_ID,
+                id,
+                {
+                    isDeleted: true,
+                    deletedAt: new Date().toISOString()
+                }
+            );
         } catch (e) {
             console.error('Failed to delete task', e);
         }
@@ -52,13 +73,19 @@ export class Store {
 
     static async updateTask(id, text) {
         try {
-            const response = await fetch(`${API_URL}/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text })
-            });
-            if (!response.ok) throw new Error('Failed to update task');
-            return await response.json();
+            const response = await databases.updateDocument(
+                DATABASE_ID,
+                COLLECTION_ID,
+                id,
+                { 
+                    text,
+                    isEdited: true
+                }
+            );
+            return {
+                id: response.$id,
+                ...response
+            };
         } catch (e) {
             console.error('Failed to update task', e);
             throw e;
@@ -67,26 +94,37 @@ export class Store {
 
     static async toggleTask(id, currentCompleted) {
         try {
-            const response = await fetch(`${API_URL}/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ completed: !currentCompleted })
-            });
-            if (!response.ok) throw new Error('Failed to toggle task');
+            const updates = { completed: !currentCompleted };
+            if (!currentCompleted) { // Becoming completed
+                updates.completedAt = new Date().toISOString();
+            } else {
+                updates.completedAt = null;
+            }
+
+            await databases.updateDocument(
+                DATABASE_ID,
+                COLLECTION_ID,
+                id,
+                updates
+            );
         } catch (e) {
             console.error('Failed to toggle task', e);
         }
     }
     
     static async updateOrder(tasksWithOrder) {
-        // tasksWithOrder should be array of { id, order }
+        // Appwrite doesn't have a native batch update for documents yet.
+        // We have to do it individually or use an Appwrite Function.
         try {
-            const response = await fetch(`${API_URL}/reorder/batch`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ tasks: tasksWithOrder })
-            });
-            if (!response.ok) throw new Error('Failed to reorder tasks');
+            const promises = tasksWithOrder.map(taskItem => 
+                databases.updateDocument(
+                    DATABASE_ID,
+                    COLLECTION_ID,
+                    taskItem.id,
+                    { order: taskItem.order }
+                )
+            );
+            await Promise.all(promises);
         } catch (e) {
             console.error('Failed to reorder tasks', e);
         }
@@ -94,9 +132,18 @@ export class Store {
 
     static async getTrashTasks() {
         try {
-            const response = await fetch(`${API_URL}/trash`);
-            if (!response.ok) throw new Error('Failed to fetch trash tasks');
-            return await response.json();
+            const response = await databases.listDocuments(
+                DATABASE_ID,
+                COLLECTION_ID,
+                [
+                    Query.equal('isDeleted', true),
+                    Query.orderAsc('deletedAt')
+                ]
+            );
+            return response.documents.map(doc => ({
+                id: doc.$id,
+                ...doc
+            }));
         } catch (e) {
             console.error('Failed to load trash tasks', e);
             return [];
@@ -105,11 +152,19 @@ export class Store {
 
     static async restoreTask(id) {
         try {
-            const response = await fetch(`${API_URL}/${id}/restore`, {
-                method: 'POST'
-            });
-            if (!response.ok) throw new Error('Failed to restore task');
-            return await response.json();
+            const response = await databases.updateDocument(
+                DATABASE_ID,
+                COLLECTION_ID,
+                id,
+                {
+                    isDeleted: false,
+                    deletedAt: null
+                }
+            );
+            return {
+                id: response.$id,
+                ...response
+            };
         } catch (e) {
             console.error('Failed to restore task', e);
             throw e;
@@ -118,10 +173,11 @@ export class Store {
 
     static async permanentDeleteTask(id) {
         try {
-            const response = await fetch(`${API_URL}/${id}/permanent`, {
-                method: 'DELETE'
-            });
-            if (!response.ok) throw new Error('Failed to permanently delete task');
+            await databases.deleteDocument(
+                DATABASE_ID,
+                COLLECTION_ID,
+                id
+            );
         } catch (e) {
             console.error('Failed to permanently delete task', e);
         }
