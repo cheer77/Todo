@@ -52,7 +52,7 @@ async function setup() {
 
         await createAttr(databases.createStringAttribute.bind(databases), databaseId, collectionId, 'text', 5000, true);
         await createAttr(databases.createBooleanAttribute.bind(databases), databaseId, collectionId, 'completed', false, false);
-        await createAttr(databases.createIntegerAttribute.bind(databases), databaseId, collectionId, 'order', false, 0);
+        await createAttr(databases.createIntegerAttribute.bind(databases), databaseId, collectionId, 'order', false, -1000000);
         await createAttr(databases.createBooleanAttribute.bind(databases), databaseId, collectionId, 'isEdited', false, false);
         await createAttr(databases.createBooleanAttribute.bind(databases), databaseId, collectionId, 'isDeleted', false, false);
         await createAttr(databases.createDatetimeAttribute.bind(databases), databaseId, collectionId, 'deletedAt', false);

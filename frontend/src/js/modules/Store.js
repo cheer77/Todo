@@ -30,9 +30,9 @@ export class Store {
             // Get current tasks to determine the next order value (added to top)
             const currentTasks = await this.getTasks();
             const minOrder = currentTasks.length > 0 
-                ? Math.min(...currentTasks.map(t => t.order || 0)) 
+                ? Math.min(...currentTasks.map(t => (t.order !== undefined ? t.order : 0))) 
                 : 0;
-            const nextOrder = minOrder - 1;
+            const nextOrder = currentTasks.length > 0 ? minOrder - 1 : 0;
 
             const response = await databases.createDocument(
                 DATABASE_ID,
