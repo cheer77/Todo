@@ -63,15 +63,12 @@ class App {
         this.unsubscribe = client.subscribe(
             `databases.${DATABASE_ID}.collections.${COLLECTION_ID}.documents`,
             (response) => {
+                // response.events contains ['databases.*.collections.*.documents.*.update', etc]
+                console.log('🔄 Real-time event:', response.events);
+                
                 // Debounce rapid events
                 clearTimeout(this._socketDebounceTimer);
                 this._socketDebounceTimer = setTimeout(() => {
-                    // Skip re-render if this client just triggered the update
-                    if (this._skipNextSocketUpdate) {
-                        this._skipNextSocketUpdate = false;
-                        return;
-                    }
-                    console.log('🔄 Real-time update received from Appwrite');
                     this.renderTasks(false);
                 }, SOCKET_DEBOUNCE_MS);
             }
@@ -324,7 +321,8 @@ class App {
     }
 
     async handleReorder() {
-        if (this.currentFilter !== 'all') return; // Safety check
+        // We now allow reordering in filtered views too, 
+        // but it will only affect the relative order of visible items.
 
         // Scrape the DOM to get new order of IDs
         const tasksWithOrder = [];

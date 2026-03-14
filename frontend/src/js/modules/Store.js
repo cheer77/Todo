@@ -1,5 +1,5 @@
 import { databases } from '../appwrite.js';
-import { ID, Query } from 'appwrite';
+import { ID, Query, Permission, Role } from 'appwrite';
 
 const DATABASE_ID = import.meta.env.VITE_APPWRITE_DATABASE_ID;
 const COLLECTION_ID = import.meta.env.VITE_APPWRITE_COLLECTION_ID;
@@ -27,10 +27,13 @@ export class Store {
 
     static async addTask(task) {
         try {
-            // New tasks appear at top: we should ideally handle order on server
-            // But for now, we'll just create it. 
-            // Note: In a real app, you might want an Appwrite Function or client-side order calc
-            
+            // Get current tasks to determine the next order value (added to top)
+            const currentTasks = await this.getTasks();
+            const minOrder = currentTasks.length > 0 
+                ? Math.min(...currentTasks.map(t => t.order || 0)) 
+                : 0;
+            const nextOrder = minOrder - 1;
+
             const response = await databases.createDocument(
                 DATABASE_ID,
                 COLLECTION_ID,
@@ -38,11 +41,16 @@ export class Store {
                 {
                     text: task.text,
                     completed: task.completed || false,
-                    order: 0, // Simplified: needs proper order handling
+                    order: nextOrder,
                     createdAt: task.createdAt || new Date().toISOString(),
                     isDeleted: false,
                     isEdited: false
-                }
+                },
+                [
+                    Permission.read(Role.any()),
+                    Permission.update(Role.any()),
+                    Permission.delete(Role.any())
+                ]
             );
             
             return {

@@ -78,7 +78,7 @@ async function setup() {
         await createIdx('idx_order', 'key', ['order']);
 
         // 5. Set Permissions
-        console.log('🔒 Setting permissions (CRUD for any role)...');
+        console.log('🔒 Setting permissions (Collection Level)...');
         try {
             await databases.updateCollection(
                 databaseId, 
@@ -89,9 +89,10 @@ async function setup() {
                     Permission.create(Role.any()),
                     Permission.update(Role.any()),
                     Permission.delete(Role.any()),
-                ]
+                ],
+                false // documentSecurity = false (Collection Level)
             );
-            console.log('   ✅ Permissions set to Public');
+            console.log('   ✅ Permissions set to Public (Collection Level)');
         } catch (e) {
             console.warn('   ⚠️ Could not set permissions via script: ' + e.message);
         }
