@@ -75,6 +75,7 @@ async function setup() {
         await createAttr(databases.createDatetimeAttribute.bind(databases), databaseId, collectionId, 'deletedAt', false);
         await createAttr(databases.createDatetimeAttribute.bind(databases), databaseId, collectionId, 'completedAt', false);
         await createAttr(databases.createDatetimeAttribute.bind(databases), databaseId, collectionId, 'createdAt', true);
+        await createAttr(databases.createStringAttribute.bind(databases), databaseId, collectionId, 'lastUpdatedBy', 36, false);
 
         console.log('⏳ Waiting for attributes to be available...');
         await new Promise(resolve => setTimeout(resolve, 5000));

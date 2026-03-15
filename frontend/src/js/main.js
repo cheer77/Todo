@@ -1,6 +1,6 @@
 import '../scss/style.scss';
 import { client } from './appwrite.js';
-import { Store } from './modules/Store.js';
+import { Store, CLIENT_ID } from './modules/Store.js';
 import { TaskItem } from './modules/TaskItem.js';
 import { TrashTimer } from './modules/TrashTimer.js';
 import { DragDrop } from './modules/DragDrop.js';
@@ -63,8 +63,16 @@ class App {
         this.unsubscribe = client.subscribe(
             `databases.${DATABASE_ID}.collections.${COLLECTION_ID}.documents`,
             (response) => {
-                // response.events contains ['databases.*.collections.*.documents.*.update', etc]
-                console.log('🔄 Real-time event:', response.events);
+                const payload = response.payload;
+                const eventType = response.events[0]; // e.g., 'databases.*.collections.*.documents.*.update'
+                
+                // Filter out own events using CLIENT_ID
+                if (payload.lastUpdatedBy === CLIENT_ID) {
+                    console.log('🙈 Ignoring own real-time event');
+                    return;
+                }
+
+                console.log('🔄 Real-time event from another client:', response.events);
                 
                 // Debounce rapid events
                 clearTimeout(this._socketDebounceTimer);
@@ -319,20 +327,35 @@ class App {
             }
         });
     }
-
     async handleReorder() {
         // We now allow reordering in filtered views too, 
         // but it will only affect the relative order of visible items.
 
         // Scrape the DOM to get new order of IDs
         const tasksWithOrder = [];
+        const currentOrderMap = new Map((this.tasks || []).map(t => [t.id, t.order]));
+        let hasChanges = false;
+
         this.taskList.querySelectorAll('.task-item').forEach((item, index) => {
             const id = item.dataset.id;
+            const oldOrder = currentOrderMap.get(id);
+            if (oldOrder !== index) {
+                hasChanges = true;
+            }
             tasksWithOrder.push({ id, order: index });
         });
+
+        if (!hasChanges) {
+            this.hideMiniLoader();
+            return;
+        }
+
         this.showMiniLoader();
         this._skipNextSocketUpdate = true;
-        await Store.updateOrder(tasksWithOrder);
+        
+        // Only send updates for tasks that actually changed position
+        const changedTasks = tasksWithOrder.filter(t => currentOrderMap.get(t.id) !== t.order);
+        await Store.updateOrder(changedTasks);
 
         // Sync local cache so tab-switching doesn't revert to old order
         if (this.tasks) {

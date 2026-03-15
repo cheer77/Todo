@@ -4,6 +4,9 @@ import { ID, Query, Permission, Role } from 'appwrite';
 const DATABASE_ID = import.meta.env.VITE_APPWRITE_DATABASE_ID;
 const COLLECTION_ID = import.meta.env.VITE_APPWRITE_COLLECTION_ID;
 
+// Generate a unique ID for this client session to filter own real-time events
+export const CLIENT_ID = ID.unique();
+
 export class Store {
     static async getTasks() {
         try {
@@ -44,7 +47,8 @@ export class Store {
                     order: nextOrder,
                     createdAt: task.createdAt || new Date().toISOString(),
                     isDeleted: false,
-                    isEdited: false
+                    isEdited: false,
+                    lastUpdatedBy: CLIENT_ID
                 },
                 [
                     Permission.read(Role.any()),
@@ -71,7 +75,8 @@ export class Store {
                 id,
                 {
                     isDeleted: true,
-                    deletedAt: new Date().toISOString()
+                    deletedAt: new Date().toISOString(),
+                    lastUpdatedBy: CLIENT_ID
                 }
             );
         } catch (e) {
@@ -87,7 +92,8 @@ export class Store {
                 id,
                 { 
                     text,
-                    isEdited: true
+                    isEdited: true,
+                    lastUpdatedBy: CLIENT_ID
                 }
             );
             return {
@@ -109,6 +115,8 @@ export class Store {
                 updates.completedAt = null;
             }
 
+            updates.lastUpdatedBy = CLIENT_ID;
+
             await databases.updateDocument(
                 DATABASE_ID,
                 COLLECTION_ID,
@@ -129,7 +137,10 @@ export class Store {
                     DATABASE_ID,
                     COLLECTION_ID,
                     taskItem.id,
-                    { order: taskItem.order }
+                    { 
+                        order: taskItem.order,
+                        lastUpdatedBy: CLIENT_ID
+                    }
                 )
             );
             await Promise.all(promises);
@@ -166,7 +177,8 @@ export class Store {
                 id,
                 {
                     isDeleted: false,
-                    deletedAt: null
+                    deletedAt: null,
+                    lastUpdatedBy: CLIENT_ID
                 }
             );
             return {
