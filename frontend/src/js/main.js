@@ -1,6 +1,6 @@
 import '../scss/style.scss';
 import { client } from './appwrite.js';
-import { Store, CLIENT_ID } from './modules/Store.js';
+import { Store } from './modules/Store.js';
 import { TaskItem } from './modules/TaskItem.js';
 import { TrashTimer } from './modules/TrashTimer.js';
 import { DragDrop } from './modules/DragDrop.js';
@@ -63,16 +63,14 @@ class App {
         this.unsubscribe = client.subscribe(
             `databases.${DATABASE_ID}.collections.${COLLECTION_ID}.documents`,
             (response) => {
-                const payload = response.payload;
-                const eventType = response.events[0]; // e.g., 'databases.*.collections.*.documents.*.update'
-                
-                // Filter out own events using CLIENT_ID
-                if (payload.lastUpdatedBy === CLIENT_ID) {
-                    console.log('🙈 Ignoring own real-time event');
+                // If we initiated this change, skip the realtime update to prevent flicker
+                if (this._skipNextSocketUpdate) {
+                    console.log('🙈 Skipping own real-time event via flag');
+                    this._skipNextSocketUpdate = false;
                     return;
                 }
 
-                console.log('🔄 Real-time event from another client:', response.events);
+                console.log('🔄 Real-time event:', response.events);
                 
                 // Debounce rapid events
                 clearTimeout(this._socketDebounceTimer);
