@@ -11,6 +11,7 @@ import { EditModal } from './modules/EditModal.js';
 const MAX_CHARS = 1500;
 const REALTIME_DEBOUNCE_MS = 300;
 const TRASH_TIMER_INTERVAL_MS = 60 * 1000; // 1 minute
+const AUTO_CHECK_INTERVAL_MS = 10 * 1000; // Check every 10 seconds for auto-actions
 
 /**
  * ⏰ How long a completed task stays before auto-moving to Trash.
@@ -18,6 +19,13 @@ const TRASH_TIMER_INTERVAL_MS = 60 * 1000; // 1 minute
  * Production: 1 hour (60 * 60 * 1000 ms)
  */
 const COMPLETION_AUTO_TRASH_MS = 3 * 60 * 1000; // 3 minutes for testing
+
+/**
+ * ⏰ How long a task stays in Trash before auto-delete.
+ * Testing: 5 minutes (5 * 60 * 1000 ms)
+ * Production: 24 hours (24 * 60 * 60 * 1000 ms)
+ */
+const TRASH_AUTO_DELETE_MS = 5 * 60 * 1000; // 5 minutes for testing
 
 class App {
 	constructor() {
@@ -36,6 +44,7 @@ class App {
 		this._activeTaskItem = null;
 		this._trashTimerInterval = null;
 		this._completionTimerInterval = null;
+		this._autoCheckInterval = null;
 		this._realtimeUnsubscribe = null;
 
 		this.init();
@@ -47,6 +56,8 @@ class App {
 		this.setupFilters();
 		this.setupCharCounter();
 		this.setupDragDrop();
+		// Start auto-check for completion and trash timers
+		this._startAutoCheckInterval();
 		// Defer real-time subscription
 		if ('requestIdleCallback' in window) {
 			requestIdleCallback(() => this.setupRealtime());
@@ -404,7 +415,99 @@ class App {
 		}
 	}
 
-	async _ensureLottieContainer() {
+	// --- Auto-check interval for completion and trash timers ---
+	_startAutoCheckInterval() {
+		this._stopAutoCheckInterval();
+		this._autoCheckInterval = setInterval(async () => {
+			// Always check both completion and trash timers
+			const completionCheckNeeded = await this._checkCompletionTimers();
+			const trashCheckNeeded = await this._checkTrashTimers();
+
+			// Only re-render if something changed
+			if (completionCheckNeeded && this.currentFilter !== 'trash') {
+				await this.renderTasks(false);
+			} else if (trashCheckNeeded && this.currentFilter === 'trash') {
+				await this.renderTasks(false);
+			}
+		}, AUTO_CHECK_INTERVAL_MS);
+	}
+
+	_stopAutoCheckInterval() {
+		if (this._autoCheckInterval) {
+			clearInterval(this._autoCheckInterval);
+			this._autoCheckInterval = null;
+		}
+	}
+
+	/**
+	 * Check completed tasks and auto-move them to trash if TTL exceeded.
+	 * @returns {boolean} True if any tasks were moved to trash
+	 */
+	async _checkCompletionTimers() {
+		const tasks = this.tasks || [];
+		const now = Date.now();
+		const tasksToDelete = [];
+
+		for (const task of tasks) {
+			if (task.completed && task.completedAt) {
+				const completedTime = new Date(task.completedAt).getTime();
+				const elapsed = now - completedTime;
+
+				if (elapsed >= COMPLETION_AUTO_TRASH_MS) {
+					tasksToDelete.push(task.id);
+					console.log(
+						`⏰ Auto-moving completed task "${task.text}" to trash (elapsed: ${Math.floor(elapsed / 1000)}s)`
+					);
+				}
+			}
+		}
+
+		// Batch delete to trash
+		if (tasksToDelete.length > 0) {
+			for (const id of tasksToDelete) {
+				await Store.deleteTask(id);
+			}
+			// Invalidate cache
+			this.tasks = null;
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Check trash tasks and auto-permanently delete them if TTL exceeded.
+	 * @returns {boolean} True if any tasks were permanently deleted
+	 */
+	async _checkTrashTimers() {
+		const trashTasks = this.trashTasks || [];
+		const now = Date.now();
+		const tasksToDelete = [];
+
+		for (const task of trashTasks) {
+			if (task.isDeleted && task.deletedAt) {
+				const deletedTime = new Date(task.deletedAt).getTime();
+				const elapsed = now - deletedTime;
+
+				if (elapsed >= TRASH_AUTO_DELETE_MS) {
+					tasksToDelete.push(task.id);
+					console.log(
+						`⏰ Auto-permanently deleting trash task "${task.text}" (elapsed: ${Math.floor(elapsed / 1000)}s)`
+					);
+				}
+			}
+		}
+
+		// Batch permanent delete
+		if (tasksToDelete.length > 0) {
+			for (const id of tasksToDelete) {
+				await Store.permanentDeleteTask(id);
+			}
+			// Invalidate cache
+			this.trashTasks = null;
+			return true;
+		}
+		return false;
+	}
 		if (!this._lottieContainer) {
 			this._lottieContainer = document.createElement('div');
 			this._lottieContainer.className = 'no-tasks-container';
