@@ -1,4 +1,4 @@
-const CACHE_NAME = 'todo-pwa-v4';
+const CACHE_NAME = 'todo-pwa-v5';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -41,8 +41,12 @@ self.addEventListener('fetch', (event) => {
       return;
     }
     
-    // NEVER cache API requests - always go to network
-    if (url.pathname.startsWith('/api/')) {
+    // NEVER cache API requests (Local or Appwrite)
+    const isApiRequest = url.pathname.startsWith('/api/') || 
+                         url.hostname === 'cloud.appwrite.io' ||
+                         url.hostname.includes('appwrite.io');
+
+    if (isApiRequest) {
       event.respondWith(fetch(event.request));
       return;
     }
@@ -52,8 +56,8 @@ self.addEventListener('fetch', (event) => {
       caches.match(event.request).then((response) => {
         return response || fetch(event.request).then((fetchResponse) => {
           return caches.open(CACHE_NAME).then((cache) => {
-            // Only cache GET requests for static assets
-            if (event.request.method === 'GET' && !url.pathname.startsWith('/api/')) {
+            // Only cache GET requests for static assets (already filtered API above)
+            if (event.request.method === 'GET') {
               cache.put(event.request, fetchResponse.clone());
             }
             return fetchResponse;

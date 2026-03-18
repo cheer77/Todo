@@ -68,12 +68,13 @@ class App {
 				// Debounce rapid events
 				clearTimeout(this._realtimeDebounceTimer);
 				this._realtimeDebounceTimer = setTimeout(() => {
+					console.log('📦 Re-rendering tasks from real-time event');
 					this.renderTasks(false);
 				}, REALTIME_DEBOUNCE_MS);
 			}
 		);
 
-		console.log('✅ Subscribed to Appwrite Real-time updates');
+		console.log('✅ Subscribed to Appwrite Real-time updates:', { DATABASE_ID, COLLECTION_ID });
 	}
 
 	showMiniLoader() {
