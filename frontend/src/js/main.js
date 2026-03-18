@@ -1,6 +1,6 @@
 import '../scss/style.scss';
 import { client } from './appwrite.js';
-import { Store, setTasksUpdateCallback } from './modules/Store.js';
+import { Store } from './modules/Store.js';
 import { TaskItem } from './modules/TaskItem.js';
 import { TrashTimer } from './modules/TrashTimer.js';
 import { DragDrop } from './modules/DragDrop.js';
