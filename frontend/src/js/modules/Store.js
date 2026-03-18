@@ -32,7 +32,13 @@ export class Store {
 				ID.unique(),
 				{
 					text,
-				completed: false,
+					completed: false,
+					isDeleted: false,
+					order: maxOrder + 1,
+					createdAt: new Date().toISOString(),
+					completedAt: null,
+					deletedAt: null,
+				}
 			);
 
 			return {
