@@ -10,7 +10,7 @@ module.exports = async function (context) {
     const databaseId = process.env.DATABASE_ID;
     const collectionId = process.env.COLLECTION_ID;
 
-    const cutoff = new Date(Date.now() - 3 * 60 * 1000).toISOString(); // 3 minutes for testing
+    const cutoff = new Date(Date.now() - 4 * 60 * 1000).toISOString(); // 4 minutes for testing
 
     try {
         const response = await databases.listDocuments(databaseId, collectionId, [

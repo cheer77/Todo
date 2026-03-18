@@ -13,19 +13,8 @@ const REALTIME_DEBOUNCE_MS = 300;
 const TRASH_TIMER_INTERVAL_MS = 1 * 1000; // Update every 1 second for smooth countdown
 const AUTO_CHECK_INTERVAL_MS = 5 * 1000; // Check every 5 seconds for auto-actions
 
-/**
- * ⏰ How long a completed task stays before auto-moving to Trash.
- * Testing: 3 minutes (3 * 60 * 1000 ms)
- * Production: 1 hour (60 * 60 * 1000 ms)
- */
-const COMPLETION_AUTO_TRASH_MS = 3 * 60 * 1000; // 3 minutes for testing
-
-/**
- * ⏰ How long a task stays in Trash before auto-delete.
- * Testing: 5 minutes (5 * 60 * 1000 ms)
- * Production: 24 hours (24 * 60 * 60 * 1000 ms)
- */
-const TRASH_AUTO_DELETE_MS = 5 * 60 * 1000; // 5 minutes for testing
+const COMPLETION_AUTO_TRASH_MS = 4 * 60 * 1000; // 4 minutes for testing
+const TRASH_AUTO_DELETE_MS = 4 * 60 * 1000; // 4 minutes for testing
 
 class App {
 	constructor() {
@@ -375,7 +364,9 @@ class App {
 				const timerEl = li.querySelector('.trash-timer');
 				const deletedAt = li.dataset.deletedAt;
 				if (timerEl && deletedAt) {
-					TrashTimer.updateInPlace(timerEl, deletedAt);
+					TrashTimer.updateInPlace(timerEl, deletedAt, {
+						ttl: TRASH_AUTO_DELETE_MS,
+					});
 				}
 			});
 		}, TRASH_TIMER_INTERVAL_MS);

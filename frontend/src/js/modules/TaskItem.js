@@ -3,8 +3,8 @@ import { TrashTimer } from './TrashTimer.js';
 /**
  * TTL constants for timers (must match main.js values)
  */
-const COMPLETION_AUTO_TRASH_MS = 3 * 60 * 1000;  // 3 minutes (testing)
-const TRASH_AUTO_DELETE_MS = 5 * 60 * 1000;      // 5 minutes (testing)
+const COMPLETION_AUTO_TRASH_MS = 4 * 60 * 1000;  // 4 minutes (testing)
+const TRASH_AUTO_DELETE_MS = 4 * 60 * 1000;      // 4 minutes (testing)
 
 // Pre-built SVG templates — created once, cloned per task (avoids repeated HTML parsing)
 const _svgNS = 'http://www.w3.org/2000/svg';
