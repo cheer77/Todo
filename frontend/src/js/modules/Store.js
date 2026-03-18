@@ -9,7 +9,7 @@ export class Store {
 		try {
 			const response = await databases.listDocuments(DATABASE_ID, COLLECTION_ID, [
 				Query.equal('isDeleted', false),
-				Query.orderAsc('order'),
+				Query.orderDesc('order'),
 			]);
 			return response.documents.map((doc) => ({
 				id: doc.$id,
@@ -57,6 +57,8 @@ export class Store {
 			await databases.updateDocument(DATABASE_ID, COLLECTION_ID, id, {
 				isDeleted: true,
 				deletedAt: now,
+				completed: true,
+				completedAt: now,
 			});
 		} catch (e) {
 			console.error('Failed to delete task', e);
@@ -120,6 +122,8 @@ export class Store {
 			const response = await databases.updateDocument(DATABASE_ID, COLLECTION_ID, id, {
 				isDeleted: false,
 				deletedAt: null,
+				completed: false,
+				completedAt: null,
 			});
 			return {
 				id: response.$id,
