@@ -114,7 +114,7 @@ export class TaskItem {
                 const { label } = TrashTimer.computeProgress(taskObj.completedAt, {
                     ttl: COMPLETION_AUTO_TRASH_MS,
                 });
-                countdownEl.textContent = `🗑️ ${label}`;
+                countdownEl.textContent = `🗑️ ${label}` + ' until trash';
                 taskContent.appendChild(countdownEl);
             }
         } else {
@@ -290,19 +290,8 @@ export class TaskItem {
             metaContainer.appendChild(editedIndicator);
         }
 
-        // Completion countdown badge (non-trash completed tasks)
-        if (!isTrash && taskObj.completed && taskObj.completedAt) {
-            /**
-             * ⏰ Must match COMPLETED_AUTO_TRASH_MS in backend/server.js
-             * and COMPLETION_AUTO_TRASH_MS in main.js
-             */
-            const COMPLETION_TTL = 60 * 60 * 1000; // 1 hour
-            const { label, remainingMs } = TrashTimer.computeProgress(taskObj.completedAt, { ttl: COMPLETION_TTL });
-            const countdown = document.createElement('span');
-            countdown.className = 'completion-countdown';
-            countdown.textContent = remainingMs > 0 ? `\uD83D\uDDD1\uFE0F ${label}` : `\uD83D\uDDD1\uFE0F ...`;
-            metaContainer.appendChild(countdown);
-        }
+        // Completion countdown badge removed - already shown in taskContent above
+        // This prevents duplicate timers with conflicting TTL values
 
         if (expandBtnBottom) li.appendChild(expandBtnBottom);
         li.appendChild(taskContent);

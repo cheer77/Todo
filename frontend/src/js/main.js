@@ -10,8 +10,8 @@ import { EditModal } from './modules/EditModal.js';
 
 const MAX_CHARS = 1500;
 const REALTIME_DEBOUNCE_MS = 300;
-const TRASH_TIMER_INTERVAL_MS = 60 * 1000; // 1 minute
-const AUTO_CHECK_INTERVAL_MS = 10 * 1000; // Check every 10 seconds for auto-actions
+const TRASH_TIMER_INTERVAL_MS = 1 * 1000; // Update every 1 second for smooth countdown
+const AUTO_CHECK_INTERVAL_MS = 5 * 1000; // Check every 5 seconds for auto-actions
 
 /**
  * ⏰ How long a completed task stays before auto-moving to Trash.
@@ -402,7 +402,7 @@ class App {
 						ttl: COMPLETION_TTL,
 					});
 					countdownEl.textContent =
-						remainingMs > 0 ? `\uD83D\uDDD1\uFE0F ${label}` : `\uD83D\uDDD1\uFE0F ...`;
+						remainingMs > 0 ? `\uD83D\uDDD1\uFE0F ${label} until trash` : `\uD83D\uDDD1\uFE0F ...`;
 				}
 			});
 		}, TRASH_TIMER_INTERVAL_MS);
@@ -458,12 +458,21 @@ class App {
 					console.log(
 						`⏰ Auto-moving completed task "${task.text}" to trash (elapsed: ${Math.floor(elapsed / 1000)}s)`
 					);
+					
+					// Add removal animation to DOM element
+					const taskElement = this.taskList.querySelector(`[data-id="${task.id}"]`);
+					if (taskElement) {
+						taskElement.classList.add('removing');
+					}
 				}
 			}
 		}
 
-		// Batch delete to trash
+		// Batch delete to trash with animation delay
 		if (tasksToDelete.length > 0) {
+			// Wait for animations to complete
+			await new Promise(resolve => setTimeout(resolve, 330));
+			
 			for (const id of tasksToDelete) {
 				await Store.deleteTask(id);
 			}
@@ -493,12 +502,21 @@ class App {
 					console.log(
 						`⏰ Auto-permanently deleting trash task "${task.text}" (elapsed: ${Math.floor(elapsed / 1000)}s)`
 					);
+					
+					// Add removal animation to DOM element
+					const taskElement = this.taskList.querySelector(`[data-id="${task.id}"]`);
+					if (taskElement) {
+						taskElement.classList.add('removing');
+					}
 				}
 			}
 		}
 
-		// Batch permanent delete
+		// Batch permanent delete with animation delay
 		if (tasksToDelete.length > 0) {
+			// Wait for animations to complete
+			await new Promise(resolve => setTimeout(resolve, 330));
+			
 			for (const id of tasksToDelete) {
 				await Store.permanentDeleteTask(id);
 			}
