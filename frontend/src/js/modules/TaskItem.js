@@ -107,16 +107,6 @@ export class TaskItem {
             checkboxLabel.appendChild(checkmark);
             taskContent.appendChild(checkboxLabel);
 
-            // Completion countdown timer (for completed tasks)
-            if (taskObj.completed && taskObj.completedAt) {
-                const countdownEl = document.createElement('div');
-                countdownEl.classList.add('completion-countdown');
-                const { label } = TrashTimer.computeProgress(taskObj.completedAt, {
-                    ttl: COMPLETION_AUTO_TRASH_MS,
-                });
-                countdownEl.textContent = `🗑️ ${label}` + ' until trash';
-                taskContent.appendChild(countdownEl);
-            }
         } else {
             // Timer for trash mode with correct TTL
             const timer = TrashTimer.render(taskObj.deletedAt, {
@@ -288,6 +278,17 @@ export class TaskItem {
             editedIndicator.appendChild(EDITED_ICON.cloneNode(true));
             editedIndicator.append(' was edited');
             metaContainer.appendChild(editedIndicator);
+        }
+
+        // Completion countdown timer (moved to meta-container)
+        if (!isTrash && taskObj.completed && taskObj.completedAt) {
+            const countdownEl = document.createElement('div');
+            countdownEl.classList.add('completion-countdown');
+            const { label } = TrashTimer.computeProgress(taskObj.completedAt, {
+                ttl: COMPLETION_AUTO_TRASH_MS,
+            });
+            countdownEl.textContent = `🗑️ ${label}`;
+            metaContainer.appendChild(countdownEl);
         }
 
         // Completion countdown badge removed - already shown in taskContent above

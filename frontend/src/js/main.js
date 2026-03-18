@@ -402,7 +402,7 @@ class App {
 						ttl: COMPLETION_TTL,
 					});
 					countdownEl.textContent =
-						remainingMs > 0 ? `\uD83D\uDDD1\uFE0F ${label} until trash` : `\uD83D\uDDD1\uFE0F ...`;
+						remainingMs > 0 ? `\uD83D\uDDD1\uFE0F ${label}` : `\uD83D\uDDD1\uFE0F ...`;
 				}
 			});
 		}, TRASH_TIMER_INTERVAL_MS);
