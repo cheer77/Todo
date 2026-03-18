@@ -508,6 +508,8 @@ class App {
 		}
 		return false;
 	}
+
+	async _ensureLottieContainer() {
 		if (!this._lottieContainer) {
 			this._lottieContainer = document.createElement('div');
 			this._lottieContainer.className = 'no-tasks-container';
