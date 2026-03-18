@@ -10,7 +10,7 @@ import { EditModal } from './modules/EditModal.js';
 
 const MAX_CHARS = 1500;
 const REALTIME_DEBOUNCE_MS = 300;
-const TRASH_TIMER_INTERVAL_MS = 1 * 1000; // Update every 1 second for smooth countdown
+const TRASH_TIMER_INTERVAL_MS = 500; // Update every 500ms for smoother ring animation
 const AUTO_CHECK_INTERVAL_MS = 5 * 1000; // Check every 5 seconds for auto-actions
 
 const COMPLETION_AUTO_TRASH_MS = 4 * 60 * 1000; // 4 minutes for testing

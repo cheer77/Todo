@@ -83,10 +83,19 @@ export class TrashTimer {
         const remaining = Math.max(0, ttl - elapsed);
         const fraction  = remaining / ttl; // 1 = full, 0 = expired
 
-        const totalMinutes = Math.floor(remaining / 60_000);
-        const hours   = Math.floor(totalMinutes / 60);
-        const minutes = totalMinutes % 60;
-        const label   = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+        const totalSeconds = Math.floor(remaining / 1000);
+        const hours   = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+
+        let label;
+        if (hours > 0) {
+            label = `${hours}h ${minutes}m`;
+        } else if (minutes > 0) {
+            label = `${minutes}m ${seconds}s`;
+        } else {
+            label = `${seconds}s`;
+        }
 
         return { remainingMs: remaining, fraction, label };
     }
