@@ -86,7 +86,7 @@ export class TaskItem {
             checkboxInput.checked = taskObj.completed;
             
             checkboxInput.addEventListener('change', () => {
-                onToggle(taskObj.id, taskObj.completed);
+                onToggle(taskObj.id, checkboxInput.checked);
                 if (checkboxInput.checked) {
                     li.classList.add('completed');
                 } else {
@@ -185,10 +185,11 @@ export class TaskItem {
             deleteBtn.classList.add('delete-btn');
             deleteBtn.appendChild(DELETE_ICON.cloneNode(true));
             
-            deleteBtn.addEventListener('click', () => {
+            deleteBtn.addEventListener('click', async (e) => {
+                e.stopPropagation();
                 li.classList.add('removing');
+                await onDelete(taskObj.id);
                 setTimeout(() => {
-                    onDelete(taskObj.id);
                     li.remove();
                 }, 300);
             });
@@ -205,11 +206,12 @@ export class TaskItem {
             restoreLabel.textContent = 'Restore';
             restoreBtn.appendChild(restoreLabel);
 
-            restoreBtn.addEventListener('click', (e) => {
+            restoreBtn.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 li.classList.add('restoring');
+                if (onRestore) await onRestore(taskObj.id);
                 setTimeout(() => {
-                    if (onRestore) onRestore(taskObj.id);
+                    li.remove();
                 }, 350);
             });
 
@@ -218,11 +220,11 @@ export class TaskItem {
             permDeleteBtn.classList.add('delete-btn', 'trash-delete-btn');
             permDeleteBtn.appendChild(DELETE_ICON.cloneNode(true));
 
-            permDeleteBtn.addEventListener('click', (e) => {
+            permDeleteBtn.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 li.classList.add('removing');
+                if (onPermanentDelete) await onPermanentDelete(taskObj.id);
                 setTimeout(() => {
-                    if (onPermanentDelete) onPermanentDelete(taskObj.id);
                     li.remove();
                 }, 300);
             });
