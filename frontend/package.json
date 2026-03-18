@@ -1,23 +1,24 @@
 {
-  "name": "antygravity-test",
-  "version": "1.0.0",
-  "description": "",
-  "main": "script.js",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "devDependencies": {
-    "sass": "^1.97.3",
-    "vite": "^7.3.1"
-  },
-  "dependencies": {
-    "@lottiefiles/dotlottie-web": "^0.65.0",
-    "appwrite": "^23.0.0"
-  }
+	"name": "antygravity-test",
+	"version": "1.0.0",
+	"description": "",
+	"main": "script.js",
+	"scripts": {
+		"dev": "vite",
+		"build": "vite build",
+		"preview": "vite preview"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"type": "commonjs",
+	"devDependencies": {
+		"sass": "^1.97.3",
+		"vite": "^7.3.1"
+	},
+	"dependencies": {
+		"@lottiefiles/dotlottie-web": "^0.65.0",
+		"appwrite": "^23.0.0",
+		"socket.io-client": "^4.8.3"
+	}
 }
