@@ -1,6 +1,6 @@
 import '../scss/style.scss';
 import { client } from './appwrite.js';
-import { Store, socket } from './modules/Store.js';
+import { Store, setTasksUpdateCallback } from './modules/Store.js';
 import { TaskItem } from './modules/TaskItem.js';
 import { TrashTimer } from './modules/TrashTimer.js';
 import { DragDrop } from './modules/DragDrop.js';
@@ -9,15 +9,15 @@ import { Skeleton } from './modules/Skeleton.js';
 import { EditModal } from './modules/EditModal.js';
 
 const MAX_CHARS = 1500;
-const SOCKET_DEBOUNCE_MS = 300;
+const REALTIME_DEBOUNCE_MS = 300;
 const TRASH_TIMER_INTERVAL_MS = 60 * 1000; // 1 minute
 
 /**
  * ⏰ How long a completed task stays before auto-moving to Trash.
- * Must match COMPLETED_AUTO_TRASH_MS in backend/server.js.
- * Default: 1 hour (60 * 60 * 1000 ms)
+ * Testing: 3 minutes (3 * 60 * 1000 ms)
+ * Production: 1 hour (60 * 60 * 1000 ms)
  */
-const COMPLETION_AUTO_TRASH_MS = 60 * 60 * 1000; // 1 hour
+const COMPLETION_AUTO_TRASH_MS = 3 * 60 * 1000; // 3 minutes for testing
 
 class App {
 	constructor() {
@@ -30,13 +30,13 @@ class App {
 		this.inputGroup = document.querySelector('.input-group');
 
 		this.currentFilter = localStorage.getItem('todoFilter') || 'active';
-		this._socketDebounceTimer = null;
+		this._realtimeDebounceTimer = null;
 		this._lottieContainer = null;
 		this._lottieAnim = null;
 		this._activeTaskItem = null;
-		this._skipNextSocketUpdate = false;
 		this._trashTimerInterval = null;
 		this._completionTimerInterval = null;
+		this._realtimeUnsubscribe = null;
 
 		this.init();
 	}
@@ -56,18 +56,24 @@ class App {
 	}
 
 	setupRealtime() {
-		// Listen for task changes from other clients via Socket.IO
-		socket.on('tasks:change', () => {
-			console.log('🔄 Received tasks:change event');
+		const DATABASE_ID = import.meta.env.VITE_APPWRITE_DATABASE_ID;
+		const COLLECTION_ID = import.meta.env.VITE_APPWRITE_COLLECTION_ID;
 
-			// Debounce rapid events
-			clearTimeout(this._socketDebounceTimer);
-			this._socketDebounceTimer = setTimeout(() => {
-				this.renderTasks(false);
-			}, SOCKET_DEBOUNCE_MS);
-		});
+		// Subscribe to Appwrite Real-time document updates
+		this._realtimeUnsubscribe = client.subscribe(
+			`databases.${DATABASE_ID}.collections.${COLLECTION_ID}.documents`,
+			(response) => {
+				console.log('🔄 Appwrite Real-time event:', response.events);
 
-		console.log('🔌 Subscribed to Socket.IO tasks:change event');
+				// Debounce rapid events
+				clearTimeout(this._realtimeDebounceTimer);
+				this._realtimeDebounceTimer = setTimeout(() => {
+					this.renderTasks(false);
+				}, REALTIME_DEBOUNCE_MS);
+			}
+		);
+
+		console.log('✅ Subscribed to Appwrite Real-time updates');
 	}
 
 	showMiniLoader() {
@@ -239,7 +245,6 @@ class App {
 		};
 
 		this.showMiniLoader();
-		this._skipNextSocketUpdate = true;
 		await Store.addTask(newTask);
 		await this.renderTasks(false);
 		this.hideMiniLoader();
@@ -251,7 +256,6 @@ class App {
 
 	async deleteTask(id) {
 		this.showMiniLoader();
-		this._skipNextSocketUpdate = true;
 		await Store.deleteTask(id);
 		await this.renderTasks(false);
 		this.hideMiniLoader();
@@ -259,7 +263,6 @@ class App {
 
 	async restoreTask(id) {
 		this.showMiniLoader();
-		this._skipNextSocketUpdate = true;
 		try {
 			await Store.restoreTask(id);
 			// Invalidate normal tasks cache so switching to All/Active/Done shows restored task
@@ -273,7 +276,6 @@ class App {
 
 	async permanentDeleteTask(id) {
 		this.showMiniLoader();
-		this._skipNextSocketUpdate = true;
 		await Store.permanentDeleteTask(id);
 		await this.renderTasks(false);
 		this.hideMiniLoader();
@@ -281,7 +283,6 @@ class App {
 
 	async toggleTask(id, completed) {
 		this.showMiniLoader();
-		this._skipNextSocketUpdate = true;
 		await Store.toggleTask(id, completed);
 		await this.renderTasks(false);
 		this.hideMiniLoader();
@@ -292,7 +293,7 @@ class App {
 			if (taskEl) {
 				Tooltip.show({
 					target: taskEl,
-					message: 'Task will be moved to Trash in 1 hour',
+					message: 'Task will be moved to Trash in 3 minutes',
 					position: 'top',
 					duration: 3000,
 				});
@@ -307,7 +308,6 @@ class App {
 			sourceElement,
 			onSave: async (taskId, newText) => {
 				this.showMiniLoader();
-				this._skipNextSocketUpdate = true;
 				try {
 					await Store.updateTask(taskId, newText);
 					// Full re-render to show 'was edited' indicator immediately
@@ -343,7 +343,6 @@ class App {
 		}
 
 		this.showMiniLoader();
-		this._skipNextSocketUpdate = true;
 
 		// Only send updates for tasks that actually changed position
 		const changedTasks = tasksWithOrder.filter((t) => currentOrderMap.get(t.id) !== t.order);

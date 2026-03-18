@@ -18,7 +18,6 @@
 	},
 	"dependencies": {
 		"@lottiefiles/dotlottie-web": "^0.65.0",
-		"appwrite": "^23.0.0",
-		"socket.io-client": "^4.8.3"
+		"appwrite": "^23.0.0"
 	}
 }
