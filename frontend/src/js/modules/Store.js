@@ -32,13 +32,7 @@ export class Store {
 				ID.unique(),
 				{
 					text,
-					isDone: false,
-					isDeleted: false,
-					order: maxOrder + 1,
-					createdAt: new Date().toISOString(),
-					completedAt: null,
-					deletedAt: null,
-				}
+				completed: false,
 			);
 
 			return {
@@ -73,12 +67,12 @@ export class Store {
 		}
 	}
 
-	static async toggleTask(id, isDone) {
+	static async toggleTask(id, completed) {
 		try {
 			const now = new Date().toISOString();
 			const updates = {
-				isDone,
-				completedAt: isDone ? now : null,
+				completed,
+				completedAt: completed ? now : null,
 			};
 			await databases.updateDocument(DATABASE_ID, COLLECTION_ID, id, updates);
 		} catch (e) {

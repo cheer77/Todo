@@ -238,14 +238,8 @@ class App {
 			return;
 		}
 
-		const newTask = {
-			text: taskText,
-			completed: false,
-			createdAt: new Date().toISOString(),
-		};
-
 		this.showMiniLoader();
-		await Store.addTask(newTask);
+		await Store.addTask(taskText);
 		await this.renderTasks(false);
 		this.hideMiniLoader();
 		this.taskInput.value = '';
@@ -287,8 +281,8 @@ class App {
 		await this.renderTasks(false);
 		this.hideMiniLoader();
 
-		// Show tooltip when marking as completed (completed was false, now true)
-		if (!completed) {
+		// Show tooltip when marking as completed
+		if (completed) {
 			const taskEl = this.taskList.querySelector(`[data-id="${id}"]`);
 			if (taskEl) {
 				Tooltip.show({
