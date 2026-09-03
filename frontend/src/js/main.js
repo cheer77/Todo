@@ -63,12 +63,9 @@ class App {
 		this._realtimeUnsubscribe = client.subscribe(
 			`databases.${DATABASE_ID}.collections.${COLLECTION_ID}.documents`,
 			(response) => {
-				console.log('🔄 Appwrite Real-time event:', response.events);
-
 				// Debounce rapid events
 				clearTimeout(this._realtimeDebounceTimer);
 				this._realtimeDebounceTimer = setTimeout(() => {
-					console.log('📦 Re-rendering tasks from real-time event');
 					this.renderTasks(false);
 				}, REALTIME_DEBOUNCE_MS);
 			}
@@ -447,10 +444,7 @@ class App {
 
 				if (elapsed >= COMPLETION_AUTO_TRASH_MS) {
 					tasksToDelete.push(task.id);
-					console.log(
-						`⏰ Auto-moving completed task "${task.text}" to trash (elapsed: ${Math.floor(elapsed / 1000)}s)`
-					);
-					
+
 					// Add removal animation to DOM element
 					const taskElement = this.taskList.querySelector(`[data-id="${task.id}"]`);
 					if (taskElement) {
@@ -463,8 +457,8 @@ class App {
 		// Batch delete to trash with animation delay
 		if (tasksToDelete.length > 0) {
 			// Wait for animations to complete
-			await new Promise(resolve => setTimeout(resolve, 330));
-			
+			await new Promise((resolve) => setTimeout(resolve, 330));
+
 			for (const id of tasksToDelete) {
 				await Store.deleteTask(id);
 			}
@@ -494,7 +488,7 @@ class App {
 					console.log(
 						`⏰ Auto-permanently deleting trash task "${task.text}" (elapsed: ${Math.floor(elapsed / 1000)}s)`
 					);
-					
+
 					// Add removal animation to DOM element
 					const taskElement = this.taskList.querySelector(`[data-id="${task.id}"]`);
 					if (taskElement) {
@@ -507,8 +501,8 @@ class App {
 		// Batch permanent delete with animation delay
 		if (tasksToDelete.length > 0) {
 			// Wait for animations to complete
-			await new Promise(resolve => setTimeout(resolve, 330));
-			
+			await new Promise((resolve) => setTimeout(resolve, 330));
+
 			for (const id of tasksToDelete) {
 				await Store.permanentDeleteTask(id);
 			}
