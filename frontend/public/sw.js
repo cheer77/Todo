@@ -1,4 +1,4 @@
-const CACHE_NAME = 'todo-pwa-v5';
+const CACHE_NAME = 'todo-pwa-v6';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -51,6 +51,23 @@ self.addEventListener('fetch', (event) => {
       return;
     }
     
+    // Always try fresh HTML first so deployed JS/CSS versions are not pinned
+    // by an old service worker cache.
+    if (event.request.mode === 'navigate') {
+      event.respondWith(
+        fetch(event.request)
+          .then((fetchResponse) => {
+            const responseClone = fetchResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put('/index.html', responseClone);
+            });
+            return fetchResponse;
+          })
+          .catch(() => caches.match('/index.html'))
+      );
+      return;
+    }
+
     // For static assets: Cache First, fallback to Network
     event.respondWith(
       caches.match(event.request).then((response) => {

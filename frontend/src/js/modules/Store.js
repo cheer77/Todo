@@ -98,6 +98,7 @@ export class Store {
 			await Promise.all(promises);
 		} catch (e) {
 			console.error('Failed to reorder tasks', e);
+			throw e;
 		}
 	}
 

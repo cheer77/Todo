@@ -340,7 +340,13 @@ class App {
 
 		// Only send updates for tasks that actually changed position
 		const changedTasks = tasksWithOrder.filter((t) => currentOrderMap.get(t.id) !== t.order);
-		await Store.updateOrder(changedTasks);
+		try {
+			await Store.updateOrder(changedTasks);
+		} catch (e) {
+			await this.renderTasks(false);
+			this.hideMiniLoader();
+			return;
+		}
 
 		// Sync local cache so tab-switching doesn't revert to old order
 		if (this.tasks) {
