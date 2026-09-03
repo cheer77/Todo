@@ -436,9 +436,6 @@ class App {
 
 				if (elapsed >= TRASH_AUTO_DELETE_MS) {
 					tasksToDelete.push(task.id);
-					console.log(
-						`⏰ Auto-permanently deleting trash task "${task.text}" (elapsed: ${Math.floor(elapsed / 1000)}s)`
-					);
 
 					// Add removal animation to DOM element
 					const taskElement = this.taskList.querySelector(`[data-id="${task.id}"]`);
