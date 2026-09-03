@@ -105,6 +105,7 @@
 
 .task-text-wrapper {
     flex: 1;
+    min-width: 0;
     position: relative;
     overflow: hidden;
     transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);

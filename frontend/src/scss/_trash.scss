@@ -2,146 +2,149 @@
 
 /* --- Trash Timer (glassmorphism ring spinner) --- */
 .trash-timer {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.15rem;
-    padding: 0.25rem;
-    background: rgba(255, 255, 255, 0.04);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 10px;
-    flex-shrink: 0;
-    min-width: 36px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 0.15rem;
+	box-sizing: border-box;
+	padding: 0.45rem;
+	background: rgba(255, 255, 255, 0.04);
+	backdrop-filter: blur(8px);
+	-webkit-backdrop-filter: blur(8px);
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	border-radius: 10px;
+	flex: 0 0 44px;
+	width: 44px;
 }
 
 .trash-timer-ring {
-    display: block;
-    flex-shrink: 0;
+	display: block;
+	flex-shrink: 0;
 }
 
 .trash-timer-progress {
-    transition: stroke-dashoffset 0.6s ease;
+	transition: stroke-dashoffset 0.6s ease;
 }
 
 .trash-timer-text {
-    font-size: 0.55rem;
-    font-weight: 500;
-    color: #94a3b8;
-    white-space: nowrap;
-    letter-spacing: 0.02em;
-    line-height: 1;
+	display: block;
+	font-size: 0.65rem;
+	font-weight: 500;
+	font-variant-numeric: tabular-nums;
+	color: #94a3b8;
+	white-space: nowrap;
+	text-align: center;
+	line-height: 1;
 }
 
 /* --- Trash Actions Wrapper (restore + or + delete) --- */
 .trash-actions {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 0.2rem;
-    flex-shrink: 0;
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-    transition: all 0.25s ease;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 0.2rem;
+	flex-shrink: 0;
+	opacity: 0;
+	visibility: hidden;
+	pointer-events: none;
+	transition: all 0.25s ease;
 }
 
 .task-item:hover .trash-actions,
 .task-item.active .trash-actions {
-    opacity: 1;
-    visibility: visible;
-    pointer-events: auto;
+	opacity: 1;
+	visibility: visible;
+	pointer-events: auto;
 }
 
 .trash-actions-or {
-    font-size: 0.6rem;
-    color: #64748b;
-    font-weight: 400;
-    line-height: 1;
-    user-select: none;
+	font-size: 0.6rem;
+	color: #64748b;
+	font-weight: 400;
+	line-height: 1;
+	user-select: none;
 }
 
 /* --- Restore Button --- */
 .restore-btn {
-    display: flex;
-    align-items: center;
-    gap: 0.3rem;
-    background: rgba(16, 185, 129, 0.1);
-    border: 1px solid rgba(16, 185, 129, 0.25);
-    color: #10b981;
-    cursor: pointer;
-    padding: 0.25rem 0.5rem;
-    border-radius: 8px;
-    font-family: 'Outfit', sans-serif;
-    font-size: 0.7rem;
-    font-weight: 500;
-    transition: all 0.25s ease;
-    flex-shrink: 0;
+	display: flex;
+	align-items: center;
+	gap: 0.3rem;
+	background: rgba(16, 185, 129, 0.1);
+	border: 1px solid rgba(16, 185, 129, 0.25);
+	color: #10b981;
+	cursor: pointer;
+	padding: 0.25rem 0.5rem;
+	border-radius: 8px;
+	font-family: 'Outfit', sans-serif;
+	font-size: 0.7rem;
+	font-weight: 500;
+	transition: all 0.25s ease;
+	flex-shrink: 0;
 
-    &:hover {
-        background: rgba(16, 185, 129, 0.2);
-        border-color: rgba(16, 185, 129, 0.4);
-        transform: scale(1.05);
-    }
+	&:hover {
+		background: rgba(16, 185, 129, 0.2);
+		border-color: rgba(16, 185, 129, 0.4);
+		transform: scale(1.05);
+	}
 }
 
 /* Trash permanent delete button — revealed on hover like restore */
 .trash-delete-btn {
-    flex-shrink: 0;
-    padding: 0.2rem 0.4rem !important;
+	flex-shrink: 0;
+	padding: 0.2rem 0.4rem !important;
 
-    svg {
-        width: 14px;
-        height: 14px;
-    }
+	svg {
+		width: 14px;
+		height: 14px;
+	}
 }
 
 /* --- Trash task card tweaks --- */
 .task-item.in-trash {
-    background: rgba(30, 41, 59, 0.4);
-    border-color: rgba(255, 255, 255, 0.06);
+	background: rgba(30, 41, 59, 0.4);
+	border-color: rgba(255, 255, 255, 0.06);
 
-    .task-text {
-        color: #94a3b8;
-    }
+	.task-text {
+		color: #94a3b8;
+	}
 
-    &:hover {
-        background: rgba(30, 41, 59, 0.55);
-    }
+	&:hover {
+		background: rgba(30, 41, 59, 0.55);
+	}
 }
 
 /* --- Restore animation --- */
 .task-item.restoring {
-    animation: restoreSlideUp 0.35s ease-out forwards;
+	animation: restoreSlideUp 0.35s ease-out forwards;
 }
 
 @keyframes restoreSlideUp {
-    0% {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-    100% {
-        opacity: 0;
-        transform: translateY(-20px) scale(0.95);
-        max-height: 0;
-        padding-top: 0;
-        padding-bottom: 0;
-        margin-top: 0;
-        margin-bottom: 0;
-        border-width: 0;
-    }
+	0% {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+	}
+	100% {
+		opacity: 0;
+		transform: translateY(-20px) scale(0.95);
+		max-height: 0;
+		padding-top: 0;
+		padding-bottom: 0;
+		margin-top: 0;
+		margin-bottom: 0;
+		border-width: 0;
+	}
 }
 
 /* --- Hide input group when in trash filter --- */
 .input-group.hidden {
-    display: none;
+	display: none;
 }
 
 /* --- Trash filter button icon --- */
-.filter-btn[data-filter="trash"] .trash-filter-icon {
-    width: 14px;
-    height: 14px;
-    vertical-align: -2px;
+.filter-btn[data-filter='trash'] .trash-filter-icon {
+	width: 14px;
+	height: 14px;
+	vertical-align: -2px;
 }
