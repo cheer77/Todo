@@ -108,6 +108,7 @@
     min-width: 0;
     position: relative;
     overflow: hidden;
+    user-select: text;
     transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 
     &.truncated {
@@ -139,6 +140,7 @@
     font-size: 1rem;
     display: block;
     word-break: break-word;
+    user-select: text;
 }
 
 /* Expand / Collapse Button */
