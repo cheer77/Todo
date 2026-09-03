@@ -313,19 +313,23 @@ class App {
 		// We now allow reordering in filtered views too,
 		// but it will only affect the relative order of visible items.
 
-		// Scrape the DOM to get new order of IDs
-		const tasksWithOrder = [];
+		// Scrape the DOM to get new order of IDs. Tasks are loaded with
+		// Query.orderDesc('order'), so the top visible item must keep the
+		// highest visible order value.
+		const reorderedItems = [...this.taskList.querySelectorAll('.task-item')];
 		const currentOrderMap = new Map((this.tasks || []).map((t) => [t.id, t.order]));
-		let hasChanges = false;
+		const visibleOrders = reorderedItems
+			.map((item) => currentOrderMap.get(item.dataset.id))
+			.filter((order) => Number.isFinite(order))
+			.sort((a, b) => b - a);
 
-		this.taskList.querySelectorAll('.task-item').forEach((item, index) => {
+		const tasksWithOrder = reorderedItems.map((item, index) => {
 			const id = item.dataset.id;
-			const oldOrder = currentOrderMap.get(id);
-			if (oldOrder !== index) {
-				hasChanges = true;
-			}
-			tasksWithOrder.push({ id, order: index });
+			const fallbackOrder = reorderedItems.length - index;
+			return { id, order: visibleOrders[index] ?? fallbackOrder };
 		});
+
+		const hasChanges = tasksWithOrder.some((t) => currentOrderMap.get(t.id) !== t.order);
 
 		if (!hasChanges) {
 			this.hideMiniLoader();
@@ -344,7 +348,7 @@ class App {
 			this.tasks.forEach((t) => {
 				if (orderMap.has(t.id)) t.order = orderMap.get(t.id);
 			});
-			this.tasks.sort((a, b) => a.order - b.order);
+			this.tasks.sort((a, b) => b.order - a.order);
 		}
 
 		this.hideMiniLoader();
