@@ -15,11 +15,6 @@ function _createSvgTemplate(html, width, height) {
     return tpl.content.firstElementChild;
 }
 
-const DRAG_ICON = _createSvgTemplate(
-    '<circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="19" r="1"></circle>',
-    12, 12
-);
-
 const DELETE_ICON = _createSvgTemplate(
     '<path d="M19 7L18.1327 19.1425C18.0579 20.1891 17.187 21 16.1378 21H7.86224C6.81296 21 5.94208 20.1891 5.86732 19.1425L5 7M10 11V17M14 11V17M15 7V4C15 3.44772 14.5523 3 14 3H10C9.44772 3 9 3.44772 9 4V7M4 7H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
     18, 18
@@ -52,7 +47,6 @@ export class TaskItem {
         if (taskObj.completed) {
             li.classList.add('completed');
         }
-        li.setAttribute('draggable', 'false');
         li.dataset.id = taskObj.id;
         if (isTrash && taskObj.deletedAt) {
             li.dataset.deletedAt = taskObj.deletedAt;
@@ -66,23 +60,6 @@ export class TaskItem {
         taskContent.classList.add('task-content');
 
         if (!isTrash) {
-            // Drag Handle
-            const dragHandle = document.createElement('div');
-            dragHandle.classList.add('drag-handle');
-            dragHandle.appendChild(DRAG_ICON.cloneNode(true));
-
-            dragHandle.addEventListener('mousedown', () => {
-                li.setAttribute('draggable', 'true');
-            });
-            dragHandle.addEventListener('mouseup', () => {
-                li.setAttribute('draggable', 'false');
-            });
-            dragHandle.addEventListener('mouseleave', () => {
-                li.setAttribute('draggable', 'false');
-            });
-
-            taskContent.appendChild(dragHandle);
-
             // Checkbox Container
             const checkboxLabel = document.createElement('label');
             checkboxLabel.classList.add('checkbox-container');

@@ -85,18 +85,6 @@
         transform: translateX(4px);
     }
 
-    &.dragging {
-        opacity: 0.5;
-        background: rgba(255, 255, 255, 0.05);
-        border: 2px dashed rgba(255, 255, 255, 0.2);
-        box-shadow: none;
-        
-        /* Hide content to make it look like a placeholder "slot" */
-        & > * {
-            visibility: hidden;
-        }
-    }
-
     &.removing {
         opacity: 0;
         transform: scale(0.9);
@@ -207,7 +195,7 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    padding-left: 2.5rem; /* Align with text after checkbox */
+    padding-left: 2rem; /* Align with text after checkbox */
 }
 
 .task-timestamp {
@@ -275,11 +263,6 @@
     background: rgba(239, 68, 68, 0.1);
 }
 
-/* Drag Over Effect */
-/* .task-list.drag-over {
-    // Optional visual cue for list container
-} */
-
 /* Completed Task Styling */
 .task-item.completed {
     background: rgba(30, 41, 59, 0.4);
@@ -289,24 +272,6 @@
 .task-item.completed .task-text {
     text-decoration: line-through;
     color: #64748b;
-}
-
-/* Drag Handle */
-.drag-handle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: grab;
-    color: var(--text-color);
-    opacity: 0.7;
-    padding: 8px;
-    transition: opacity 0.2s;
-
-    &:hover {
-        opacity: 1;
-        color: var(--primary-color);
-        transform: scale(1.1);
-    }
 }
 
 /* Custom Checkbox */
@@ -431,14 +396,5 @@
             line-height: 1;
             color: #94a3b8;
         }
-    }
-}
-
-/* Hide drag handles when filtered so order cannot be messed up */
-.task-list.filtered {
-    .drag-handle {
-        opacity: 0.2 !important;
-        pointer-events: none !important;
-        cursor: default !important;
     }
 }

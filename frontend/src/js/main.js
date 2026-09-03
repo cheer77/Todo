@@ -3,7 +3,6 @@ import { client } from './appwrite.js';
 import { Store } from './modules/Store.js';
 import { TaskItem } from './modules/TaskItem.js';
 import { TrashTimer } from './modules/TrashTimer.js';
-import { DragDrop } from './modules/DragDrop.js';
 import { Tooltip } from './modules/Tooltip.js';
 import { Skeleton } from './modules/Skeleton.js';
 import { EditModal } from './modules/EditModal.js';
@@ -44,7 +43,6 @@ class App {
 		this.setupEventListeners();
 		this.setupFilters();
 		this.setupCharCounter();
-		this.setupDragDrop();
 		// Start auto-check for completion and trash timers
 		this._startAutoCheckInterval();
 		// Defer real-time subscription
@@ -205,10 +203,6 @@ class App {
 		}
 	}
 
-	setupDragDrop() {
-		new DragDrop(this.taskList, this.handleReorder.bind(this));
-	}
-
 	async addTask() {
 		const taskText = this.taskInput.value.trim();
 
@@ -309,57 +303,6 @@ class App {
 			},
 		});
 	}
-	async handleReorder() {
-		// We now allow reordering in filtered views too,
-		// but it will only affect the relative order of visible items.
-
-		// Scrape the DOM to get new order of IDs. Tasks are loaded with
-		// Query.orderDesc('order'), so the top visible item must keep the
-		// highest visible order value.
-		const reorderedItems = [...this.taskList.querySelectorAll('.task-item')];
-		const currentOrderMap = new Map((this.tasks || []).map((t) => [t.id, t.order]));
-		const visibleOrders = reorderedItems
-			.map((item) => currentOrderMap.get(item.dataset.id))
-			.filter((order) => Number.isFinite(order))
-			.sort((a, b) => b - a);
-
-		const tasksWithOrder = reorderedItems.map((item, index) => {
-			const id = item.dataset.id;
-			const fallbackOrder = reorderedItems.length - index;
-			return { id, order: visibleOrders[index] ?? fallbackOrder };
-		});
-
-		const hasChanges = tasksWithOrder.some((t) => currentOrderMap.get(t.id) !== t.order);
-
-		if (!hasChanges) {
-			this.hideMiniLoader();
-			return;
-		}
-
-		this.showMiniLoader();
-
-		// Only send updates for tasks that actually changed position
-		const changedTasks = tasksWithOrder.filter((t) => currentOrderMap.get(t.id) !== t.order);
-		try {
-			await Store.updateOrder(changedTasks);
-		} catch (e) {
-			await this.renderTasks(false);
-			this.hideMiniLoader();
-			return;
-		}
-
-		// Sync local cache so tab-switching doesn't revert to old order
-		if (this.tasks) {
-			const orderMap = new Map(tasksWithOrder.map((t) => [t.id, t.order]));
-			this.tasks.forEach((t) => {
-				if (orderMap.has(t.id)) t.order = orderMap.get(t.id);
-			});
-			this.tasks.sort((a, b) => b.order - a.order);
-		}
-
-		this.hideMiniLoader();
-	}
-
 	// --- Trash timer management ---
 	_startTrashTimers() {
 		this._stopTrashTimers();

@@ -2,7 +2,7 @@
 
 ## Overview
 
-Full-stack To-Do app с **glassmorphism**-дизайном, real-time синхронизацией (Appwrite Realtime), PWA, drag-and-drop и «умной корзиной». Архитектура полностью переведена на **Appwrite Cloud (BaaS)**.
+Full-stack To-Do app с **glassmorphism**-дизайном, real-time синхронизацией (Appwrite Realtime), PWA и «умной корзиной». Архитектура полностью переведена на **Appwrite Cloud (BaaS)**.
 
 | Layer               | Stack                                                                                                        |
 | ------------------- | ------------------------------------------------------------------------------------------------------------ |

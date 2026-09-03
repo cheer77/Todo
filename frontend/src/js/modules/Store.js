@@ -88,20 +88,6 @@ export class Store {
 		}
 	}
 
-	static async updateOrder(tasksWithOrder) {
-		// Appwrite doesn't have a native batch update for documents yet.
-		// We have to do it individually or use an Appwrite Function.
-		try {
-			const promises = tasksWithOrder.map((taskItem) =>
-				databases.updateDocument(DATABASE_ID, COLLECTION_ID, taskItem.id, { order: taskItem.order })
-			);
-			await Promise.all(promises);
-		} catch (e) {
-			console.error('Failed to reorder tasks', e);
-			throw e;
-		}
-	}
-
 	static async getTrashTasks() {
 		try {
 			const response = await databases.listDocuments(DATABASE_ID, COLLECTION_ID, [
