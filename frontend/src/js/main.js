@@ -70,8 +70,6 @@ class App {
 				}, REALTIME_DEBOUNCE_MS);
 			}
 		);
-
-		console.log('✅ Subscribed to Appwrite Real-time updates:', { DATABASE_ID, COLLECTION_ID });
 	}
 
 	showMiniLoader() {
